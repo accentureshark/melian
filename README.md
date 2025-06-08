@@ -74,3 +74,15 @@ client --> [API MCP (NLQ/SQL)] : Consulta (NLQ/SQL)
 [MCP Serializer] --> client : Respuesta MCP (chunks + embeddings + metadata)
 
 @enduml
+
+
+## Roadmap
+ Soporte para SQL con chunking y metadata enriquecida
+
+ Integración con filesystems y APIs REST
+
+ Embedding vía LangChain4j, Ollama, OpenAI, etc.
+
+ Plugin system para reglas de negocio
+
+ Documentación y ejemplos para cada “sabor” MELIAN

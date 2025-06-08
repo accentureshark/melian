@@ -54,26 +54,7 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 
 ## Arquitectura (Resumen)
 
-```plantuml
-@startuml
-actor "Cliente (RAG, IA, Usuario)" as client
 
-rectangle "MELIAN (MCP Server)" {
-  [API MCP (NLQ/SQL)]
-  [Catálogo de Esquema / Metadata]
-  [Chunker y Enriquecedor]
-  [Embedding Service]
-  [MCP Serializer]
-}
-
-client --> [API MCP (NLQ/SQL)] : Consulta (NLQ/SQL)
-[API MCP (NLQ/SQL)] --> [Catálogo de Esquema / Metadata]
-[API MCP (NLQ/SQL)] --> [Chunker y Enriquecedor]
-[Chunker y Enriquecedor] --> [Embedding Service]
-[Embedding Service] --> [MCP Serializer]
-[MCP Serializer] --> client : Respuesta MCP (chunks + embeddings + metadata)
-
-@enduml
 
 
 ## Roadmap

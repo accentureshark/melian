@@ -1,0 +1,18 @@
+@startuml
+actor "Cliente IA / RAG / LLM" as client
+
+rectangle "MCP Server (Ej: MELIAN)" {
+  [API MCP (REST/HTTP)]
+  [Adapter SQL/FS/API/NoSQL/...]
+  [Chunking y Enrichment]
+  [Embedding Engine (opcional)]
+  [Serializador MCP]
+}
+
+client --> [API MCP (REST/HTTP)] : Consulta (NLQ/SQL/Filter)
+[API MCP (REST/HTTP)] --> [Adapter SQL/FS/API/NoSQL/...]
+[Adapter SQL/FS/API/NoSQL/...] --> [Chunking y Enrichment]
+[Chunking y Enrichment] --> [Embedding Engine (opcional)]
+[Embedding Engine (opcional)] --> [Serializador MCP]
+[Serializador MCP] --> client : Respuesta MCP (chunks + metadata + embedding)
+@enduml

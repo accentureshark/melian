@@ -1,0 +1,69 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: melian-mcp-server
+  datasource:
+    # Config para un adapter SQL (PostgreSQL de ejemplo)
+    url: jdbc:postgresql://localhost:5432/tu_base
+    username: tu_usuario
+    password: tu_password
+    driver-class-name: org.postgresql.Driver
+
+logging:
+  level:
+    root: INFO
+    org.shark.melian: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+melian:
+  adapters:
+    enabled:
+      - sql
+      - filesystem
+    sql:
+      default-schema: public
+      chunking:
+        mode: row          # row / column / custom
+        max-chunks: 50     # Límite por consulta
+        enrichment: true   # Agrega metadata de DDL/tablas/campos a cada chunk
+    filesystem:
+      roots:
+        - /data/melian/docs
+      supported-extensions:
+        - .txt
+        - .md
+        - .pdf
+        - .csv
+      chunking:
+        mode: paragraph    # line / paragraph / page / custom
+        max-chunks: 30
+        enrichment: true   # Agrega metadata del archivo
+  embedding:
+    provider: ollama      # ollama / openai / huggingface / custom
+    model: nomic-embed-text
+    device: cpu           # cpu / gpu
+    batch-size: 16
+    timeout-ms: 15000
+
+  mcp:
+    expose-api: true
+    endpoint: /mcp/query
+    enable-nlq: true            # Habilita parsing NLQ->SQL si corresponde
+    response-max-size: 4MB
+    default-limit: 50           # Límite de resultados si la consulta no lo especifica
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Variables de entorno opcionales:
+# MELIAN_ADAPTERS__SQL__USERNAME, MELIAN_ADAPTERS__SQL__PASSWORD, etc.
+

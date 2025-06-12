@@ -1,6 +1,7 @@
 # 🟢 ¿Qué es MCP y un MCP Server? (Dev Java Friendly)
 
 ---
+![MCP Server?](./docs/mcp.png)
 
 ### **MCP (Model Content Protocol)**
 
@@ -10,7 +11,7 @@
 
 ---
 ### **¿Qué es un MCP Server?**  
-![¿Qué es MCP y un MCP Server?](./docs/mcp-server.png)
+![MCP Server flujo](./docs/mcp-server.png)
 
 
 

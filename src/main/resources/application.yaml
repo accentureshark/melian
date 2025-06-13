@@ -1,59 +1,29 @@
 server:
-  port: 8080
+  port: 8090
 
 spring:
   application:
     name: melian-mcp-server
   datasource:
-    # Config para un adapter SQL (PostgreSQL de ejemplo)
-    url: jdbc:postgresql://localhost:5432/tu_base
-    username: tu_usuario
-    password: tu_password
-    driver-class-name: org.postgresql.Driver
+    # Conexión a MySQL Sakila
+    url: jdbc:mysql://localhost:3307/sakila?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+
+    username: sakila
+    password: sakila
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      # Validamos que el esquema exista, pero no lo modificamos
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
 logging:
   level:
     root: INFO
     org.shark.melian: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-melian:
-  adapters:
-    enabled:
-      - sql
-      - filesystem
-    sql:
-      default-schema: public
-      chunking:
-        mode: row          # row / column / custom
-        max-chunks: 50     # Límite por consulta
-        enrichment: true   # Agrega metadata de DDL/tablas/campos a cada chunk
-    filesystem:
-      roots:
-        - /data/melian/docs
-      supported-extensions:
-        - .txt
-        - .md
-        - .pdf
-        - .csv
-      chunking:
-        mode: paragraph    # line / paragraph / page / custom
-        max-chunks: 30
-        enrichment: true   # Agrega metadata del archivo
-  embedding:
-    provider: ollama      # ollama / openai / huggingface / custom
-    model: nomic-embed-text
-    device: cpu           # cpu / gpu
-    batch-size: 16
-    timeout-ms: 15000
-
-  mcp:
-    expose-api: true
-    endpoint: /mcp/query
-    enable-nlq: true            # Habilita parsing NLQ->SQL si corresponde
-    response-max-size: 4MB
-    default-limit: 50           # Límite de resultados si la consulta no lo especifica
 
 management:
   endpoints:
@@ -64,6 +34,24 @@ management:
     health:
       show-details: always
 
-# Variables de entorno opcionales:
-# MELIAN_ADAPTERS__SQL__USERNAME, MELIAN_ADAPTERS__SQL__PASSWORD, etc.
+# (Opcional) Configuración MELIAN previa si la estás usando
+melian:
+  adapters:
+    enabled:
+      - sql
+      - filesystem
+    sql:
+      default-schema: sakila
+      chunking:
+        mode: row
+        max-chunks: 50
+        enrichment: true
+  embedding:
+    provider: ollama
+    model: nomic-embed-text
+    device: cpu
+    batch-size: 16
+    timeout-ms: 15000
 
+# Variables de entorno alternas:
+# SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, etc.

@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  mysql-sakila:
+    image: mysql:8.3
+    container_name: mysql-sakila
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sakila
+      MYSQL_USER: sakila
+      MYSQL_PASSWORD: sakila
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./src/main/sql/sakila-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ./src/main/sql/sakila-data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-hsakila", "-psakila" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10

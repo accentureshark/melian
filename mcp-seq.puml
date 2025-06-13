@@ -1,0 +1,24 @@
+@startuml
+title Flujo de endpoints MCP Server (Sakila)
+
+actor "Cliente (LLM, RAG, UI, etc)" as client
+
+== Endpoint 1: Metadata/DDL ==
+client -> "MCP Server" : GET /mcp/metadata
+"MCP Server" -> "MySQL Sakila DB" : Consulta DatabaseMetaData
+"MySQL Sakila DB" --> "MCP Server" : Tablas, columnas, FKs, tipos, etc.
+"MCP Server" --> client : JSON de metadata (DDL actualizada)
+
+== Endpoint 2: Consulta RAG ==
+client -> "MCP Server" : POST /mcp/query\n(query NLQ o SQL)
+alt Query es NLQ
+    "MCP Server" -> "LLM o Traductor" : Traduce NLQ a SQL
+    "LLM o Traductor" --> "MCP Server" : SQL generado
+end
+"MCP Server" -> "MySQL Sakila DB" : Ejecuta SQL
+"MySQL Sakila DB" --> "MCP Server" : Resultados crudos
+"MCP Server" -> "Chunking + Embedding" : Chunking y embebido
+"Chunking + Embedding" --> "MCP Server" : Chunks enriquecidos (contenido + metadata + embedding)
+"MCP Server" --> client : Respuesta MCP (JSON con chunks)
+
+@enduml

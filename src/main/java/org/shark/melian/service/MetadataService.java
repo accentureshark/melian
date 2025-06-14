@@ -4,6 +4,7 @@ package org.shark.melian.service;
 import org.shark.melian.model.ColumnMetadataDto;
 import org.shark.melian.model.DatabaseMetadataDto;
 import org.shark.melian.model.TableMetadataDto;
+import org.shark.melian.model.TableShortDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -75,6 +76,20 @@ public class MetadataService {
         result.setTables(tables);
         return result;
     }
+
+    public List<TableShortDto> extractShortSummary() {
+        DatabaseMetadataDto meta = extractMetadata();
+        List<TableShortDto> summary = new ArrayList<>();
+        for (TableMetadataDto table : meta.getTables()) {
+            List<String> colNames = new ArrayList<>();
+            for (ColumnMetadataDto col : table.getColumns()) {
+                colNames.add(col.getName());
+            }
+            summary.add(new TableShortDto(table.getName(), colNames));
+        }
+        return summary;
+    }
+
 
     private Map<String, Boolean> getPrimaryKeys(DatabaseMetaData metaData, String tableName) throws SQLException {
         Map<String, Boolean> pkCols = new HashMap<>();

@@ -1,5 +1,6 @@
 package org.shark.melian.controller;
 
+import lombok.AllArgsConstructor;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.service.ChunkService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/mcp")
+
 public class ChunkController {
 
     private final ChunkService chunkService;

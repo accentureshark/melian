@@ -1,0 +1,17 @@
+USE sakila;
+SET AUTOCOMMIT=0;
+INSERT INTO film VALUES (1, 'Iron Man', 'Tony Stark becomes Iron Man after escaping captivity.', 2008, 1, NULL, 3, 4.99, 126, 19.99, 'PG-13', 7.9, 'Jon Favreau', 140000000, 585000000, 'English', '2025-06-14 18:42:57');
+INSERT INTO film VALUES (2, 'Avengers: Endgame', 'The Avengers assemble to undo Thanos' actions.', 2019, 1, NULL, 3, 4.99, 181, 19.99, 'PG-13', 8.4, 'Anthony Russo', 356000000, 2798000000, 'English', '2025-06-14 18:42:57');
+INSERT INTO film VALUES (3, 'Black Panther', 'T'Challa returns to Wakanda to become king.', 2018, 1, NULL, 3, 4.99, 134, 19.99, 'PG-13', 7.3, 'Ryan Coogler', 200000000, 1347000000, 'English', '2025-06-14 18:42:57');
+INSERT INTO film VALUES (4, 'The Dark Knight', 'Batman faces the Joker, a criminal mastermind.', 2008, 1, NULL, 3, 4.99, 152, 19.99, 'PG-13', 9.0, 'Christopher Nolan', 185000000, 1005000000, 'English', '2025-06-14 18:42:57');
+INSERT INTO film VALUES (5, 'Man of Steel', 'Clark Kent discovers his origins and becomes Superman.', 2013, 1, NULL, 3, 4.99, 143, 19.99, 'PG-13', 7.1, 'Zack Snyder', 225000000, 668000000, 'English', '2025-06-14 18:42:57');
+INSERT INTO film VALUES (6, 'Wonder Woman', 'Diana, an Amazonian warrior, fights in WWI to save humanity.', 2017, 1, NULL, 3, 4.99, 141, 19.99, 'PG-13', 7.4, 'Patty Jenkins', 149000000, 822000000, 'English', '2025-06-14 18:42:57');
+INSERT INTO film VALUES (7, 'Star Wars: Episode I - The Phantom Menace', 'Jedi knights uncover a Sith plot and meet Anakin Skywalker.', 1999, 1, NULL, 3, 4.99, 136, 19.99, 'PG', 6.5, 'George Lucas', 115000000, 1027000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (8, 'Star Wars: Episode II - Attack of the Clones', 'Anakin falls in love while the galaxy edges toward war.', 2002, 1, NULL, 3, 4.99, 142, 19.99, 'PG', 6.6, 'George Lucas', 115000000, 656000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (9, 'Star Wars: Episode III - Revenge of the Sith', 'Anakin turns to the dark side and becomes Darth Vader.', 2005, 1, NULL, 3, 4.99, 140, 19.99, 'PG-13', 7.6, 'George Lucas', 113000000, 868000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (10, 'Star Wars: Episode VII - The Force Awakens', 'A scavenger named Rey awakens the Force.', 2015, 1, NULL, 3, 4.99, 138, 19.99, 'PG-13', 7.8, 'J.J. Abrams', 245000000, 2070000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (11, 'Star Wars: Episode VIII - The Last Jedi', 'Rey seeks training as the Resistance faces Kylo Ren.', 2017, 1, NULL, 3, 4.99, 152, 19.99, 'PG-13', 6.9, 'Rian Johnson', 200000000, 1333000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (12, 'Star Wars: Episode IX - The Rise of Skywalker', 'The Resistance faces the final battle against the First Order.', 2019, 1, NULL, 3, 4.99, 142, 19.99, 'PG-13', 6.5, 'J.J. Abrams', 275000000, 1074000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (13, 'Rogue One: A Star Wars Story', 'Rebels steal the Death Star plans.', 2016, 1, NULL, 3, 4.99, 133, 19.99, 'PG-13', 7.8, 'Gareth Edwards', 200000000, 1056000000, 'English', '2025-06-14 19:03:23');
+INSERT INTO film VALUES (14, 'Solo: A Star Wars Story', 'Han Solo joins a heist and meets Chewbacca.', 2018, 1, NULL, 3, 4.99, 135, 19.99, 'PG-13', 6.9, 'Ron Howard', 275000000, 393000000, 'English', '2025-06-14 19:03:23');
+COMMIT;

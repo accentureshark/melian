@@ -1,140 +1,168 @@
 package org.shark.melian.service;
 
+import org.shark.melian.controller.ChunkPageDto;
 import org.shark.melian.model.ChunkDto;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Logger;
 
+/**
+ * MCP-compliant implementation for serving data chunks from SQL DBs.
+ * Implements org.shark.melian.service.ChunkService interface as per MCP standard.
+ */
 @Service
 public class SqlChunkService implements ChunkService {
 
-    private final DataSource dataSource;
-    private final int defaultLimit;
+    private static final Logger log = Logger.getLogger(SqlChunkService.class.getName());
 
-    public SqlChunkService(DataSource dataSource,
-                           @Value("${melian.adapters.sql.chunking.max-chunks:50}") int defaultLimit) {
-        this.dataSource = dataSource;
-        this.defaultLimit = defaultLimit;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /**
+     * MCP-Compliant, main method for retrieving data chunks from a table.
+     *
+     * @param table   - Table name (validated)
+     * @param filter  - Optional SQL filter, e.g. "title='SOMETHING'"
+     * @param limit   - Max number of results per page
+     * @param afterId - For pagination, id to continue from (should match PK)
+     * @return ChunkPageDto - List of ChunkDto + paging info
+     */
+    public ChunkPageDto findChunks(String table, String filter, int limit, String afterId) {
+        log.info("[SqlChunkService] findChunks params: table=" + table + ", filter=" + filter + ", limit=" + limit + ", afterId=" + afterId);
+
+        // Validate table name
+        if (!table.matches("^[a-zA-Z0-9_]+$")) {
+            throw new IllegalArgumentException("Tabla inválida: " + table);
+        }
+
+        // Determine primary key for pagination dynamically
+        String pkColumn = getPrimaryKeyColumn(table);
+        log.info("[SqlChunkService] PK detected: " + pkColumn);
+
+        List<String> whereClauses = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        // afterId paginación dinámica por PK
+        if (afterId != null && !afterId.isBlank()) {
+            whereClauses.add(pkColumn + " > ?");
+            params.add(afterId);
+        }
+
+        // Filtro (LIKE o '=')
+        if (filter != null && !filter.isBlank()) {
+            String filterLower = filter.toLowerCase();
+            if (filterLower.contains(" like ")) {
+                String[] parts = filter.split("(?i)like", 2);
+                String col = parts[0].trim();
+                String val = cleanQuotes(parts[1].trim());
+                if (!col.matches("^[a-zA-Z0-9_]+$")) throw new IllegalArgumentException("Columna inválida: " + col);
+                whereClauses.add(col + " LIKE ?");
+                params.add(val);
+                log.info("[SqlChunkService] Filtro LIKE: " + col + " LIKE " + val);
+            } else if (filter.contains("=")) {
+                String[] parts = filter.split("=", 2);
+                String col = parts[0].trim();
+                String val = cleanQuotes(parts[1].trim());
+                if (!col.matches("^[a-zA-Z0-9_]+$")) throw new IllegalArgumentException("Columna inválida: " + col);
+                whereClauses.add(col + " = ?");
+                params.add(val);
+                log.info("[SqlChunkService] Filtro '=': " + col + " = " + val);
+            }
+        }
+
+        String where = whereClauses.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClauses);
+        String sql = "SELECT * FROM " + table + " " + where + " LIMIT ?";
+        params.add(limit);
+
+        log.info("[SqlChunkService] Query final: " + sql);
+        log.info("[SqlChunkService] Params: " + params);
+
+        List<ChunkDto> chunks = new ArrayList<>();
+
+        try (Connection conn = jdbcTemplate.getDataSource().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
+            while (rs.next()) {
+                ChunkDto chunk = new ChunkDto();
+                // Set id using detected PK column
+                chunk.setId(rs.getString(pkColumn));
+                // Text: dynamically build from all columns
+                chunk.setText(buildTextFromResultSet(rs, rsmd));
+                // Metadata: full row map
+                Map<String, Object> metadata = new HashMap<>();
+                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                    String col = rsmd.getColumnName(i);
+                    metadata.put(col, rs.getObject(col));
+                }
+                chunk.setMetadata(metadata);
+                chunks.add(chunk);
+            }
+        } catch (Exception e) {
+            log.severe("[SqlChunkService] ERROR: " + e.getMessage());
+            e.printStackTrace();
+            // Opcional: throw una excepción MCP si quieres que suba como 4xx/5xx.
+        }
+
+        boolean hasMore = chunks.size() == limit;
+        String nextAfterId = hasMore ? chunks.get(chunks.size() - 1).getId() : null;
+        return new ChunkPageDto(chunks, hasMore, nextAfterId);
     }
 
+    /**
+     * MCP standard interface, compatible for compliance and legacy.
+     *
+     * @see ChunkService#getChunks
+     */
     @Override
-    public List<ChunkDto> getChunks(
-            String table,
-            String source,
-            int limit,
-            String afterId,
-            String filter,
-            List<String> tags,
-            String sort
-    ) {
-        // Prioridad: table > source (para futura evolución)
-        String tableName = table != null ? table : source;
+    public List<ChunkDto> getChunks(String table, String source, int limit, String afterId, String filter, List<String> tags, String sort) {
+        // MCP puro: ignora params que no usa, responde igual
+        ChunkPageDto page = findChunks(table, filter, limit, afterId);
+        return page.getChunks();
+    }
 
-        int fetchLimit = (limit > 0) ? limit : defaultLimit;
-        List<ChunkDto> chunks = new ArrayList<>();
-        if (tableName == null || tableName.isEmpty()) {
-            // No hay tabla ni fuente, no devuelvas nada
-            return chunks;
-        }
+    // UTILS
 
-        // --- Construcción dinámica del SQL ---
-        StringBuilder sql = new StringBuilder("SELECT * FROM " + tableName);
-
-        // Filtro simple tipo columna=valor (mejorar en el futuro)
-        List<String> whereClauses = new ArrayList<>();
-        if (filter != null && filter.contains("=")) {
-            String[] parts = filter.split("=", 2);
-            String col = parts[0].trim();
-            String val = parts[1].trim();
-            whereClauses.add(col + " = ?");
-        }
-
-        // Tags: no aplicados en SQL, sí en memoria (más abajo)
-
-        if (!whereClauses.isEmpty()) {
-            sql.append(" WHERE ").append(String.join(" AND ", whereClauses));
-        }
-        // Order by
-        if (sort != null && !sort.isEmpty()) {
-            sql.append(" ORDER BY ").append(sort); // Valida sort en producción para evitar SQLi
-        }
-        sql.append(" LIMIT ?");
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-
-            int paramIdx = 1;
-            if (filter != null && filter.contains("=")) {
-                String[] parts = filter.split("=", 2);
-                String val = parts[1].trim();
-                stmt.setString(paramIdx++, val);
+    /** Detección dinámica de PK por tabla (asume PK simple, mejora según tu metadata si es compuesta) */
+    private String getPrimaryKeyColumn(String table) {
+        try (Connection conn = jdbcTemplate.getDataSource().getConnection()) {
+            DatabaseMetaData meta = conn.getMetaData();
+            ResultSet pk = meta.getPrimaryKeys(null, null, table);
+            if (pk.next()) {
+                return pk.getString("COLUMN_NAME");
             }
-            stmt.setInt(paramIdx, fetchLimit);
-
-            ResultSet rs = stmt.executeQuery();
-            ResultSetMetaData meta = rs.getMetaData();
-            int colCount = meta.getColumnCount();
-
-            DatabaseMetaData dbMeta = conn.getMetaData();
-            ResultSet pkRs = dbMeta.getPrimaryKeys(null, null, tableName);
-            List<String> pkCols = new ArrayList<>();
-            while (pkRs.next()) {
-                pkCols.add(pkRs.getString("COLUMN_NAME"));
-            }
-            pkRs.close();
-
-            while (rs.next()) {
-                // ID único
-                String id;
-                if (pkCols.isEmpty()) {
-                    id = UUID.randomUUID().toString();
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    for (String pk : pkCols) {
-                        if (sb.length() > 0) sb.append("_");
-                        sb.append(rs.getString(pk));
-                    }
-                    id = sb.toString();
-                }
-
-                // MCP text y metadata
-                StringBuilder text = new StringBuilder();
-                Map<String, Object> metadata = new LinkedHashMap<>();
-                metadata.put("table", tableName);
-
-                for (int i = 1; i <= colCount; i++) {
-                    String col = meta.getColumnName(i);
-                    String val = rs.getString(i);
-                    if (text.length() > 0) text.append(" | ");
-                    text.append(col).append(": ").append(val);
-                    metadata.put(col, val);
-                }
-
-                // Tags: filtrado en memoria (mejorar si querés performance)
-                boolean matchesTags = true;
-                if (tags != null && !tags.isEmpty()) {
-                    matchesTags = tags.stream().allMatch(tag -> metadata.values().contains(tag));
-                }
-
-                if (matchesTags) {
-                    chunks.add(new ChunkDto(
-                            id,
-                            text.toString(),
-                            metadata,
-                            null,   // embedding (puede ser null)
-                            null,   // source (puede ser null)
-                            null    // tags (puede ser null)
-                    ));
-                }
-            }
-
         } catch (SQLException e) {
-            throw new RuntimeException("Error fetching chunks for table " + tableName, e);
+            log.warning("[SqlChunkService] No se pudo detectar PK para tabla " + table + ", usando 'id' por default");
         }
+        // Fallback por convención
+        return "id";
+    }
 
-        return chunks;
+    /** Limpia comillas en el filtro SQL */
+    private static String cleanQuotes(String val) {
+        val = val.trim();
+        if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {
+            return val.substring(1, val.length() - 1);
+        }
+        return val;
+    }
+
+    /** Arma el texto de chunk usando TODAS las columnas de la fila */
+    private String buildTextFromResultSet(ResultSet rs, ResultSetMetaData rsmd) throws SQLException {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+            String col = rsmd.getColumnName(i);
+            sb.append(col).append(": ").append(rs.getString(col));
+            if (i < rsmd.getColumnCount()) sb.append(" | ");
+        }
+        return sb.toString();
     }
 }

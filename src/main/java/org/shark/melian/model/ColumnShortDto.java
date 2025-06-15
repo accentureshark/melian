@@ -4,13 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TableShortDto {
+public class ColumnShortDto {
     private String name;
-    private List<ColumnShortDto> columns;
-    private List<ForeignKeyShortDto> foreignKeys;
+    private String type;
 }
+

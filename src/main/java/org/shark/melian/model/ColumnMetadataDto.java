@@ -1,4 +1,3 @@
-
 package org.shark.melian.model;
 
 import lombok.AllArgsConstructor;

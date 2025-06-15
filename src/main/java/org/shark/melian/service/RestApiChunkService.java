@@ -2,11 +2,13 @@ package org.shark.melian.service;
 
 import org.shark.melian.model.ChunkDto;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service("restApiChunkService")
 public class RestApiChunkService implements ChunkService {
@@ -15,6 +17,10 @@ public class RestApiChunkService implements ChunkService {
     private static final String TMDB_API = "https://api.themoviedb.org/3";
     private static final String TMDB_ACCESS_TOKEN =
             "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDdiMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y";
+
+    private static String encode(String s) {
+        return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8);
+    }
 
     @Override
     public List<ChunkDto> getChunks(
@@ -89,14 +95,11 @@ public class RestApiChunkService implements ChunkService {
         };
     }
 
-    private static String encode(String s) {
-        return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8);
-    }
-
     // DTO internos
     static class TMDBResponse {
         public List<TMDBMovie> results;
     }
+
     static class TMDBMovie {
         public int id;
         public String title;

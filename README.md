@@ -17,7 +17,7 @@ No es solo un software: es un *personaje* que entiende, transforma y sirve conoc
 MELIAN se implementa como un **MCP Server** (Model Content Protocol), capaz de conectarse a bases de datos, archivos, APIs, documentos, planillas y sistemas legacy,  
 y exponer chunks enriquecidos, embeddings y metadata lista para potenciar aplicaciones RAG y clientes de IA como [EvolvAI](https://github.com/tu-org/evolvai).
 
----
+
 
 ## ¿Qué es el Protocolo MCP?
 
@@ -52,24 +52,6 @@ Además, los objetos expuestos siguen estructuras comunes como `ChunkDto`, `Tabl
 
 ---
 
-> 📚 Referencias:
-> - [MCP GitHub Repo](https://github.com/langchain4j/mcp)
-> - [MCP Especificación Técnica (LangChain)](https://docs.langchain4j.dev/integrations/mcp/)
-> - [LangChain4j - Model Content Protocol Overview](https://github.com/langchain4j/langchain4j/blob/main/docs/model-content-protocol.md)
-
-![MCP Diagram](./docs/images/mcp.png)
-
-**MCP (Model Content Protocol)** es un protocolo estandarizado para exponer metadatos y contenido chunkeado, preparado para consumirse por clientes RAG, agentes de IA y motores de inferencia.  
-Un servidor MCP debe:
-
-- Exponer una estructura de metadatos accesible vía `/mcp/metadata`
-- Exponer contenidos divididos en chunks vía `/mcp/chunks`
-- Utilizar estructuras de datos como `ChunkDto` y `DatabaseMetadataDto` según el estándar
-- Mantener compatibilidad con diversas fuentes y formatos de datos (SQL, REST, archivos...)
-
-MCP no impone un backend único, sino una interfaz común.
-
----
 
 ## ¿Cómo MELIAN adhiere al estándar MCP?
 
@@ -132,6 +114,55 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 | MELIAN-Operaciones | Orquesta información operativa, logs, reportes de procesos y métricas.                 |
 
 ¿Querés sumar tu propio “sabor”? Solo cambia la configuración y conecta tus fuentes.
+
+---
+
+
+---
+
+## Buenas prácticas de implementación
+
+- Usar servicios `@Service` y controladores `@RestController` separados por responsabilidad.
+- Evitar lógica en controladores; delegar a servicios y aplicar validaciones tempranas.
+- El chunk debe tener un campo `text` bien formateado y `metadata` utilizable como contexto.
+- Validar entradas en endpoints (`filter`, `source`, `table`) para evitar SQL Injection.
+- Registrar en logs la trazabilidad de las consultas (`limit`, `afterId`, `filter`) para debug e inferencia.
+
+---
+
+## ¿Cómo levantar el servidor MELIAN?
+
+1. Requisitos:
+    - Java 17+
+    - Maven 3.8+
+    - Docker (opcional, para levantar base de datos como Sakila)
+    - MySQL local o remoto (puede usarse `docker-compose` incluido)
+
+2. Comando para levantar localmente con Maven:
+
+```bash
+mvn spring-boot:run -Dspring.profiles.active=default
+```
+
+3. Usar variables de entorno desde `.env` con:
+
+```bash
+env $(cat .env | xargs) mvn spring-boot:run
+```
+
+4. Endpoints disponibles:
+
+| Endpoint                 | Descripción                          |
+|--------------------------|--------------------------------------|
+| `/mcp/metadata`          | Metadata completa                    |
+| `/mcp/metadata/short`    | Metadata reducida (resumen)         |
+| `/mcp/chunks`            | Chunks de contenido (con filtros)   |
+
+5. Ejemplo:
+
+```
+curl 'http://localhost:8090/mcp/chunks?table=film&filter=title=%27Thor%27&source=sql'
+```
 
 ---
 

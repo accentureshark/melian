@@ -7,7 +7,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -21,6 +24,14 @@ public class SqlChunkService implements ChunkService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private static String cleanQuotes(String val) {
+        val = val.trim();
+        if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {
+            return val.substring(1, val.length() - 1);
+        }
+        return val;
+    }
 
     public ChunkPageDto findChunks(String table, String filter, int limit, String afterId) {
         log.info("[SqlChunkService] findChunks params: table=" + table + ", filter=" + filter + ", limit=" + limit + ", afterId=" + afterId);
@@ -131,14 +142,6 @@ public class SqlChunkService implements ChunkService {
             log.warning("[SqlChunkService] No se pudo detectar PK para tabla " + table);
         }
         return null; // antes devolvía "id"
-    }
-
-    private static String cleanQuotes(String val) {
-        val = val.trim();
-        if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {
-            return val.substring(1, val.length() - 1);
-        }
-        return val;
     }
 
     private String buildTextFromResultSet(ResultSet rs, ResultSetMetaData rsmd) throws SQLException {

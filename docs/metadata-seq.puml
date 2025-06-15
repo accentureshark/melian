@@ -1,0 +1,28 @@
+@startuml MetadataControllerSequence
+
+actor Client
+participant "MetadataController" as Controller
+participant "MetadataService (sql/rest)" as Service
+participant "SqlMetadataService\n(RestApiMetadataService)" as Impl
+participant "DataSource / Virtual Tables" as Source
+
+Client -> Controller : GET /mcp/metadata/short?source=sql|rest
+Controller -> Service : extractShortSummary()
+activate Service
+Service -> Impl : delegación (según 'source')
+activate Impl
+
+alt source = "sql"
+    Impl -> Source : introspección via JDBC
+else source = "rest"
+    Impl -> Source : retorna metadata virtual
+end
+
+Impl --> Service : List<TableShortDto>
+deactivate Impl
+
+Service --> Controller : List<TableShortDto>
+deactivate Service
+Controller --> Client : JSON con metadata
+
+@enduml

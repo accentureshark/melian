@@ -14,7 +14,7 @@ services:
       - ./src/main/sql/sakila-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
       - ./src/main/sql/sakila-data.sql:/docker-entrypoint-initdb.d/2-data.sql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-hsakila", "-psakila"]
+      test: [ "CMD", "mysqladmin" ,"ping", "-hsakila", "-psakila" ]
       interval: 10s
       timeout: 10s
       retries: 10

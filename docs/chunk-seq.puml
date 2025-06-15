@@ -1,0 +1,28 @@
+@startuml ChunkControllerSequence
+
+actor Client
+participant "ChunkController" as Controller
+participant "ChunkService (sql/rest)" as Service
+participant "SqlChunkService\n(RestApiChunkService)" as Impl
+participant "JdbcTemplate / TMDB API" as Backend
+
+Client -> Controller : GET /mcp/chunks\n(table, filter, source)
+Controller -> Service : getChunks(...)
+activate Service
+Service -> Impl : delegación (según 'source')
+activate Impl
+
+alt source = "sql"
+    Impl -> Backend : ejecutar query SQL
+else source = "rest"
+    Impl -> Backend : llamar TMDB API
+end
+
+Impl --> Service : List<ChunkDto>
+deactivate Impl
+
+Service --> Controller : List<ChunkDto>
+deactivate Service
+Controller --> Client : JSON de chunks
+
+@enduml

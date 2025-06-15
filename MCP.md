@@ -10,10 +10,10 @@
 - Estandariza el intercambio entre sistemas y modelos de IA/RAG.
 
 ---
-### **¿Qué es un MCP Server?**  
+
+### **¿Qué es un MCP Server?**
+
 ![MCP Server flujo](./docs/mcp-server.png)
-
-
 
 ### **MCP Server**
 

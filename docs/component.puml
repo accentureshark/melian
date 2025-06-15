@@ -1,0 +1,31 @@
+@startuml MCPServerComponents
+
+package "MCP Server" {
+
+  interface ChunkService
+  interface MetadataService
+
+  class ChunkController
+  class MetadataController
+
+  class SqlChunkService
+  class RestApiChunkService
+  class SqlMetadataService
+  class RestApiMetadataService
+
+  ChunkController --> ChunkService : getChunks(...)
+  MetadataController --> MetadataService : getShortSummary(...)
+
+  SqlChunkService ..|> ChunkService
+  RestApiChunkService ..|> ChunkService
+
+  SqlMetadataService ..|> MetadataService
+  RestApiMetadataService ..|> MetadataService
+
+  SqlChunkService --> JdbcTemplate
+  SqlMetadataService --> DataSource
+  RestApiChunkService --> "TMDB API"
+
+}
+
+@enduml

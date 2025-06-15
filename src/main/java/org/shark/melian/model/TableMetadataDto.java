@@ -12,4 +12,5 @@ import java.util.List;
 public class TableMetadataDto {
     private String name;
     private List<ColumnMetadataDto> columns;
+    private List<ForeignKeyShortDto> foreignKeys;
 }

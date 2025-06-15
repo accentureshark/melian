@@ -22,37 +22,30 @@ public class SqlChunkService implements ChunkService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    /**
-     * MCP-Compliant, main method for retrieving data chunks from a table.
-     *
-     * @param table   - Table name (validated)
-     * @param filter  - Optional SQL filter, e.g. "title='SOMETHING'"
-     * @param limit   - Max number of results per page
-     * @param afterId - For pagination, id to continue from (should match PK)
-     * @return ChunkPageDto - List of ChunkDto + paging info
-     */
     public ChunkPageDto findChunks(String table, String filter, int limit, String afterId) {
         log.info("[SqlChunkService] findChunks params: table=" + table + ", filter=" + filter + ", limit=" + limit + ", afterId=" + afterId);
+        filter = java.net.URLDecoder.decode(filter, java.nio.charset.StandardCharsets.UTF_8);
 
-        // Validate table name
         if (!table.matches("^[a-zA-Z0-9_]+$")) {
             throw new IllegalArgumentException("Tabla inválida: " + table);
         }
 
-        // Determine primary key for pagination dynamically
         String pkColumn = getPrimaryKeyColumn(table);
+        if (pkColumn == null) {
+            String msg = "[SqlChunkService] ❌ No se encontró PK para la tabla " + table + ", abortando.";
+            log.warning(msg);
+            throw new RuntimeException(msg);
+        }
         log.info("[SqlChunkService] PK detected: " + pkColumn);
 
         List<String> whereClauses = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        // afterId paginación dinámica por PK
         if (afterId != null && !afterId.isBlank()) {
             whereClauses.add(pkColumn + " > ?");
             params.add(afterId);
         }
 
-        // Filtro (LIKE o '=')
         if (filter != null && !filter.isBlank()) {
             String filterLower = filter.toLowerCase();
             if (filterLower.contains(" like ")) {
@@ -60,17 +53,17 @@ public class SqlChunkService implements ChunkService {
                 String col = parts[0].trim();
                 String val = cleanQuotes(parts[1].trim());
                 if (!col.matches("^[a-zA-Z0-9_]+$")) throw new IllegalArgumentException("Columna inválida: " + col);
-                whereClauses.add(col + " LIKE ?");
+                whereClauses.add("LOWER(" + col + ") LIKE LOWER(?)");
                 params.add(val);
-                log.info("[SqlChunkService] Filtro LIKE: " + col + " LIKE " + val);
+                log.info("[SqlChunkService] Case-insensitive LIKE: LOWER(" + col + ") LIKE LOWER(" + val + ")");
             } else if (filter.contains("=")) {
                 String[] parts = filter.split("=", 2);
                 String col = parts[0].trim();
                 String val = cleanQuotes(parts[1].trim());
                 if (!col.matches("^[a-zA-Z0-9_]+$")) throw new IllegalArgumentException("Columna inválida: " + col);
-                whereClauses.add(col + " = ?");
+                whereClauses.add("LOWER(" + col + ") = LOWER(?)");
                 params.add(val);
-                log.info("[SqlChunkService] Filtro '=': " + col + " = " + val);
+                log.info("[SqlChunkService] Case-insensitive '=': LOWER(" + col + ") = LOWER(" + val + ")");
             }
         }
 
@@ -93,23 +86,27 @@ public class SqlChunkService implements ChunkService {
             ResultSetMetaData rsmd = rs.getMetaData();
             while (rs.next()) {
                 ChunkDto chunk = new ChunkDto();
-                // Set id using detected PK column
                 chunk.setId(rs.getString(pkColumn));
-                // Text: dynamically build from all columns
-                chunk.setText(buildTextFromResultSet(rs, rsmd));
-                // Metadata: full row map
+
+                String text = buildTextFromResultSet(rs, rsmd);
+                chunk.setText(text);
+
                 Map<String, Object> metadata = new HashMap<>();
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     String col = rsmd.getColumnName(i);
                     metadata.put(col, rs.getObject(col));
                 }
                 chunk.setMetadata(metadata);
+
+                log.info("[SqlChunkService] ✅ Chunk generado: id=" + chunk.getId());
+                log.info("[SqlChunkService] ➕ text: " + text);
+                log.info("[SqlChunkService] ➕ metadata: " + metadata);
+
                 chunks.add(chunk);
             }
         } catch (Exception e) {
             log.severe("[SqlChunkService] ERROR: " + e.getMessage());
             e.printStackTrace();
-            // Opcional: throw una excepción MCP si quieres que suba como 4xx/5xx.
         }
 
         boolean hasMore = chunks.size() == limit;
@@ -117,21 +114,12 @@ public class SqlChunkService implements ChunkService {
         return new ChunkPageDto(chunks, hasMore, nextAfterId);
     }
 
-    /**
-     * MCP standard interface, compatible for compliance and legacy.
-     *
-     * @see ChunkService#getChunks
-     */
     @Override
     public List<ChunkDto> getChunks(String table, String source, int limit, String afterId, String filter, List<String> tags, String sort) {
-        // MCP puro: ignora params que no usa, responde igual
         ChunkPageDto page = findChunks(table, filter, limit, afterId);
         return page.getChunks();
     }
 
-    // UTILS
-
-    /** Detección dinámica de PK por tabla (asume PK simple, mejora según tu metadata si es compuesta) */
     private String getPrimaryKeyColumn(String table) {
         try (Connection conn = jdbcTemplate.getDataSource().getConnection()) {
             DatabaseMetaData meta = conn.getMetaData();
@@ -140,13 +128,11 @@ public class SqlChunkService implements ChunkService {
                 return pk.getString("COLUMN_NAME");
             }
         } catch (SQLException e) {
-            log.warning("[SqlChunkService] No se pudo detectar PK para tabla " + table + ", usando 'id' por default");
+            log.warning("[SqlChunkService] No se pudo detectar PK para tabla " + table);
         }
-        // Fallback por convención
-        return "id";
+        return null; // antes devolvía "id"
     }
 
-    /** Limpia comillas en el filtro SQL */
     private static String cleanQuotes(String val) {
         val = val.trim();
         if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {
@@ -155,7 +141,6 @@ public class SqlChunkService implements ChunkService {
         return val;
     }
 
-    /** Arma el texto de chunk usando TODAS las columnas de la fila */
     private String buildTextFromResultSet(ResultSet rs, ResultSetMetaData rsmd) throws SQLException {
         StringBuilder sb = new StringBuilder();
         for (int i = 1; i <= rsmd.getColumnCount(); i++) {

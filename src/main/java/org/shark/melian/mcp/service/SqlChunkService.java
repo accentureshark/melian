@@ -1,7 +1,7 @@
-package org.shark.melian.service;
+package org.shark.melian.mcp.service;
 
 import org.shark.melian.controller.ChunkPageDto;
-import org.shark.melian.model.ChunkDto;
+import org.shark.melian.mcp.model.ChunkDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * MCP-compliant implementation for serving data chunks from SQL DBs.
- * Implements org.shark.melian.service.ChunkService interface as per MCP standard.
+ * Implements org.shark.melian.mcp.service.ChunkService interface as per MCP standard.
  */
 @Service
 public class SqlChunkService implements ChunkService {

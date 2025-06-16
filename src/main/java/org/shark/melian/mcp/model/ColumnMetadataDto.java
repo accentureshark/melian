@@ -1,4 +1,4 @@
-package org.shark.melian.model;
+package org.shark.melian.mcp.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

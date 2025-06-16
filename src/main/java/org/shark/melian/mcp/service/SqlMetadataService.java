@@ -1,6 +1,6 @@
-package org.shark.melian.service;
+package org.shark.melian.mcp.service;
 
-import org.shark.melian.model.*;
+import org.shark.melian.mcp.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

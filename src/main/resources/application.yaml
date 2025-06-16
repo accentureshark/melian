@@ -36,6 +36,7 @@ management:
 
 # (Opcional) Configuración MELIAN previa si la estás usando
 melian:
+  default-source: sql  # opciones válidas: sql, tmdb, rest
   adapters:
     enabled:
       - sql
@@ -53,5 +54,4 @@ melian:
     batch-size: 16
     timeout-ms: 15000
 
-# Variables de entorno alternas:
-# SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, etc.
+#

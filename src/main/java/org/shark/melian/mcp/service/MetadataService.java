@@ -1,8 +1,8 @@
-package org.shark.melian.service;
+package org.shark.melian.mcp.service;
 
 
-import org.shark.melian.model.DatabaseMetadataDto;
-import org.shark.melian.model.TableShortDto;
+import org.shark.melian.mcp.model.DatabaseMetadataDto;
+import org.shark.melian.mcp.model.TableShortDto;
 
 import java.util.List;
 

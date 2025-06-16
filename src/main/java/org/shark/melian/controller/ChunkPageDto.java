@@ -3,7 +3,7 @@ package org.shark.melian.controller;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.shark.melian.model.ChunkDto;
+import org.shark.melian.mcp.model.ChunkDto;
 
 import java.util.List;
 

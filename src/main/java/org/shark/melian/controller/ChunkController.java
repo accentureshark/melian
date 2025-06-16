@@ -1,7 +1,7 @@
 package org.shark.melian.controller;
 
-import org.shark.melian.model.ChunkDto;
-import org.shark.melian.service.ChunkService;
+import org.shark.melian.mcp.model.ChunkDto;
+import org.shark.melian.mcp.service.ChunkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;

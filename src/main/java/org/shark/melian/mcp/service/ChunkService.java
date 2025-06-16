@@ -1,7 +1,7 @@
-package org.shark.melian.service;
+package org.shark.melian.mcp.service;
 
 
-import org.shark.melian.model.ChunkDto;
+import org.shark.melian.mcp.model.ChunkDto;
 
 import java.util.List;
 

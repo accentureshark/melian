@@ -158,9 +158,16 @@ env $(cat .env | xargs) mvn spring-boot:run
 | `/mcp/metadata/short`    | Metadata reducida (resumen)         |
 | `/mcp/chunks`            | Chunks de contenido (con filtros)   |
 
-5. Ejemplo:
+5. Ejemplos:
 
-```
+```bash
+# Metadata completa desde SQL
+curl 'http://localhost:8090/mcp/metadata?source=sql'
+
+# Metadata via REST (TMDB)
+curl 'http://localhost:8090/mcp/metadata?source=rest'
+
+# Chunks filtrados por título
 curl 'http://localhost:8090/mcp/chunks?table=film&filter=title=%27Thor%27&source=sql'
 ```
 

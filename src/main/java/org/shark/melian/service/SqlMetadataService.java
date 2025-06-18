@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service("sqlMetadataService")
-public class SqlMetadataService implements MetadataService {
+public class SqlMetadataService implements MetadataService<DatabaseMetadataDto> {
 
     private final DataSource dataSource;
 

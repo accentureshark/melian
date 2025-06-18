@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service("restApiMetadataService")
-public class RestApiMetadataService implements MetadataService {
+public class RestApiMetadataService implements MetadataService<McpMetadataDto> {
 
     // Tablas virtuales con metadata descriptiva
     private List<TableMetadataDto> tmdbVirtualTables() {
@@ -28,9 +28,15 @@ public class RestApiMetadataService implements MetadataService {
 
 
     @Override
-    public DatabaseMetadataDto extractMetadata() {
-        DatabaseMetadataDto result = new DatabaseMetadataDto();
-        result.setTables(tmdbVirtualTables());
+    public McpMetadataDto extractMetadata() {
+        McpMetadataDto result = new McpMetadataDto();
+        result.setName("TMDB");
+        result.setDescription("Virtual metadata extracted from TMDB API");
+        result.setVersion("1.0");
+        result.setBuildDate(null);
+        result.setCapabilities(List.of("chunks"));
+        result.setTypes(List.of("film"));
+        result.setDatabase(new DatabaseMetadataDto(tmdbVirtualTables()));
         return result;
     }
 

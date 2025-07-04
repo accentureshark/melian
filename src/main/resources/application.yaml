@@ -19,11 +19,22 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-
+  data:
+    mongodb:
+    # uri: mongodb://localhost:27017/nombre_bbdd
+    host: localhost
+    port: 27017
+    database: nombre_bbdd
+    username: admin
+    password: admin
+    
 logging:
   level:
     root: INFO
     org.shark.melian: DEBUG
+    # org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    # org.springframework.data.mongodb.core.MongoRepository: DEBUG
+    # com.mongodb: INFO
 
 management:
   endpoints:

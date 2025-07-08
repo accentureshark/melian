@@ -14,8 +14,7 @@
     <properties>
         <java.version>17</java.version>
         <spring-boot.version>3.2.5</spring-boot.version>
-        <langchain4j.version>1.0.1</langchain4j.version>
-        <tika.version>2.9.2</tika.version>
+        <spring-ai.version>1.0.0-M6</spring-ai.version>
     </properties>
 
 
@@ -32,85 +31,19 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Spring Boot Starters -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
-        <!-- LangChain4j -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-
-        <!-- JDBC / MySQL Sakila -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Apache Tika (parséo de archivos) -->
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>${tika.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-parsers-standard-package</artifactId>
-            <version>${tika.version}</version>
-        </dependency>
-
-        <!-- JSON (Jackson incluido en Spring Boot, opcional) -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
-
-        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.32</version>
-            <scope>provided</scope>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-mcp-server-spring-boot-starter</artifactId>
+            <version>${spring-ai.version}</version>
         </dependency>
 
 
@@ -130,28 +63,32 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot Maven Plugin -->
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>${java.version}</release>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>org.shark.melian.MelianApplication</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
-
-            <!-- Compiler Plugin (Java 17 + Lombok annotation processing) -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.10.1</version>
                 <configuration>
                     <release>${java.version}</release>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.32</version>
-                        </path>
-                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,6 +1,7 @@
 spring:
   application:
     name: melian-mcp-server
+
   ai:
     mcp:
       server:
@@ -39,6 +40,39 @@ logging:
   #   level:
   #     root: INFO
   #     org.shark.melian: DEBUG
+
+  datasource:
+    # Conexión a MySQL Sakila
+    url: jdbc:mysql://localhost:3307/sakila?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+
+    username: sakila
+    password: sakila
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      # Validamos que el esquema exista, pero no lo modificamos
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  data:
+    mongodb:
+    # uri: mongodb://localhost:27017/nombre_bbdd
+    host: localhost
+    port: 27017
+    database: nombre_bbdd
+    username: admin
+    password: admin
+    
+logging:
+  level:
+    root: INFO
+    org.shark.melian: DEBUG
+    # org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    # org.springframework.data.mongodb.core.MongoRepository: DEBUG
+    # com.mongodb: INFO
+
 
   # management:
   #   endpoints:

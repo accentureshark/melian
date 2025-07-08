@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mb.MCP_Server.model.MongoDatabaseMetadataDto;
+
 import java.util.List;
 
 @RestController
@@ -19,13 +21,16 @@ public class MetadataController {
 
     private final MetadataService<DatabaseMetadataDto> sqlMetadataService;
     private final MetadataService<McpMetadataDto> restApiMetadataService;
+    private final MetadataService<MongoDatabaseMetadataDto> mongoMetadataService;
 
     public MetadataController(
             @Qualifier("sqlMetadataService") MetadataService<DatabaseMetadataDto> sqlMetadataService,
-            @Qualifier("restApiMetadataService") MetadataService<McpMetadataDto> restApiMetadataService
+            @Qualifier("restApiMetadataService") MetadataService<McpMetadataDto> restApiMetadataService,
+            @Qualifier("mongoMetadataService") MetadataService<MongoDatabaseMetadataDto> mongoMetadataService
     ) {
         this.sqlMetadataService = sqlMetadataService;
         this.restApiMetadataService = restApiMetadataService;
+        this.mongoMetadataService = mongoMetadataService;
     }
 
     @GetMapping("/short")
@@ -33,7 +38,14 @@ public class MetadataController {
         if ("rest".equalsIgnoreCase(source)) {
             return restApiMetadataService.extractShortSummary();
         }
-        return sqlMetadataService.extractShortSummary();
+
+        if ("mongodb".equalsIgnoreCase(source)) {
+            return mongoMetadataService.extractShortSummary();
+        }
+
+        if ("sql".equalsIgnoreCase(source)) {
+            return sqlMetadataService.extractShortSummary();
+        }        
     }
 
     /**
@@ -46,6 +58,13 @@ public class MetadataController {
         if ("rest".equalsIgnoreCase(source)) {
             return restApiMetadataService.extractMetadata();
         }
-        return sqlMetadataService.extractMetadata();
+
+        if ("mongodb".equalsIgnoreCase(source)) {
+            return mongoMetadataService.extractMetadata();
+        }
+
+        if ("sql".equalsIgnoreCase(source)) {
+            return sqlMetadataService.extractMetadata();
+        }        
     }
 }

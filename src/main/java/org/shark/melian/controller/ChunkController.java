@@ -22,6 +22,10 @@ public class ChunkController {
     @Autowired
     @Qualifier("restApiChunkService")
     private ChunkService restApiChunkService;
+    
+    @Autowired
+    @Qualifier("mongoChunkService")
+    private ChunkService mongoChunkService;
 
     @GetMapping
     public List<ChunkDto> getChunks(
@@ -36,6 +40,7 @@ public class ChunkController {
         ChunkService service = switch (source.toLowerCase()) {
             case "rest", "api", "tmdb" -> restApiChunkService;
             case "sql", "db", "" -> sqlChunkService;
+            case "mongodb", "db", "" -> mongoChunkService;
             default -> throw new IllegalArgumentException("Invalid source: " + source);
         };
         return service.getChunks(table, source, limit, afterId, filter, tags, sort);

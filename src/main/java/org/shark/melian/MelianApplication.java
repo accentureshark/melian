@@ -16,8 +16,7 @@ public class MelianApplication {
     }
 
     @Bean
-    public List<ToolCallback> movieTools(MovieToolService service) {
-        return List.of(ToolCallbacks.from(service));
+    public List<ToolCallback> melianTools(MovieToolService movieToolService) {
+        return List.of(ToolCallbacks.from(movieToolService));
     }
-
 }

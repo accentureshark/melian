@@ -39,8 +39,8 @@ public class ChunkController {
     ) {
         ChunkService service = switch (source.toLowerCase()) {
             case "rest", "api", "tmdb" -> restApiChunkService;
-            case "sql", "db", "" -> sqlChunkService;
-            case "mongodb", "db", "" -> mongoChunkService;
+            case "sql", "db" -> sqlChunkService;
+            case "mongodb", "mongo" -> mongoChunkService;
             default -> throw new IllegalArgumentException("Invalid source: " + source);
         };
         return service.getChunks(table, source, limit, afterId, filter, tags, sort);

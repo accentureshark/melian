@@ -12,10 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
-import com.mb.MCP_Server.model.ColumnMetadataDto;
-import com.mb.MCP_Server.model.MongoDatabaseMetadataDto;
-import com.mb.MCP_Server.model.TableMetadataDto;
-import com.mb.MCP_Server.model.TableShortDto;
+import org.shark.melian.model.ColumnMetadataDto;
+import org.shark.melian.model.MongoDatabaseMetadataDto;
+import org.shark.melian.model.TableMetadataDto;
+import org.shark.melian.model.TableShortDto;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 

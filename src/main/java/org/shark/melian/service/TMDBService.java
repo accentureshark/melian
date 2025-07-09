@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.shark.melian.model.MovieResult;
 import org.springframework.http.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -11,36 +12,50 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TMDBService {
-	private static final String TMDB_API = "https://api.themoviedb.org/3";
-	private static final String TMDB_ACCESS_TOKEN =
-			"Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDdiMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y";
+        private final RestClient restClient;
+        private final ObjectMapper objectMapper = new ObjectMapper();
 
-	private final RestClient restClient;
-	private final ObjectMapper objectMapper = new ObjectMapper();
+        public TMDBService(
+                        @Value("${tmdb.api-url:https://api.themoviedb.org/3}") String apiUrl,
+                        @Value("${tmdb.access-token}") String accessToken
+        ) {
+                this.restClient = RestClient.builder()
+                                .baseUrl(apiUrl)
+                                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                                .requestInterceptor((request, body, execution) -> {
+                                        System.err.println("[DEBUG] Request URI: " + request.getURI());
+                                        System.err.println("[DEBUG] Request Headers: " + request.getHeaders());
+                                        return execution.execute(request, body);
+                                })
+                                .build();
 
-	public TMDBService() {
-		this.restClient = RestClient.builder()
-				.baseUrl(TMDB_API)
-				.defaultHeader(HttpHeaders.AUTHORIZATION, TMDB_ACCESS_TOKEN)
-				.defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-				.requestInterceptor((request, body, execution) -> {
-					System.err.println("[DEBUG] Request URI: " + request.getURI());
-					System.err.println("[DEBUG] Request Headers: " + request.getHeaders());
-					return execution.execute(request, body);
-				})
-				.build();
+                System.err.println("[DEBUG] TMDBService initialized");
+        }
 
-		System.err.println("[DEBUG] TMDBService initialized");
-	}
+        public List<MovieResult> search(String title, int limit) {
+                return searchByParams(Map.of("query", title), limit);
+        }
 
-	public List<MovieResult> search(String title, int limit) {
-		System.err.println("[DEBUG] Searching for title: " + title);
-		try {
-			String query = URLEncoder.encode(title, StandardCharsets.UTF_8);
-			String uri = "/search/movie?query=" + query;
+        public List<MovieResult> searchByParams(Map<String, String> params, int limit) {
+                System.err.println("[DEBUG] Searching with params: " + params);
+                try {
+                        StringBuilder uriBuilder = new StringBuilder("/search/movie");
+                        if (params != null && !params.isEmpty()) {
+                                uriBuilder.append('?');
+                                for (var entry : params.entrySet()) {
+                                        uriBuilder.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
+                                                .append('=')
+                                                .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
+                                                .append('&');
+                                }
+                                uriBuilder.deleteCharAt(uriBuilder.length() - 1);
+                        }
+                        String uri = uriBuilder.toString();
 
 			String rawJson = restClient.get()
 					.uri(uri)

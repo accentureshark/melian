@@ -1,0 +1,110 @@
+spring:
+  application:
+    name: melian-mcp-server
+
+  ai:
+    mcp:
+      server:
+        enabled: true
+        stdio: true
+        type: SYNC
+        name: melian-movie-server
+        version: 1.0.0
+        resource-change-notification: true
+        tool-change-notification: true
+        prompt-change-notification: true
+  main:
+    web-application-type: none
+    banner-mode: off
+
+logging:
+  pattern:
+    console: ""
+  # datasource:
+  #   # Conexión a MySQL Sakila
+  #   url: jdbc:mysql://localhost:3307/sakila?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+  #   username: sakila
+  #   password: sakila
+  #   driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # jpa:
+  #   hibernate:
+  #     # Validamos que el esquema exista, pero no lo modificamos
+  #     ddl-auto: validate
+  #   show-sql: true
+  #   properties:
+  #     hibernate:
+  #       dialect: org.hibernate.dialect.MySQL8Dialect
+
+  # logging:
+  #   level:
+  #     root: INFO
+  #     org.shark.melian: DEBUG
+
+  datasource:
+    # Conexión a MySQL Sakila
+    url: jdbc:mysql://localhost:3307/sakila?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+
+    username: sakila
+    password: sakila
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      # Validamos que el esquema exista, pero no lo modificamos
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  data:
+    mongodb:
+    # uri: mongodb://localhost:27017/nombre_bbdd
+    host: localhost
+    port: 27017
+    database: nombre_bbdd
+    username: admin
+    password: admin
+    
+logging:
+  level:
+    root: INFO
+    org.shark.melian: DEBUG
+    # org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    # org.springframework.data.mongodb.core.MongoRepository: DEBUG
+    # com.mongodb: INFO
+
+
+  # management:
+  #   endpoints:
+  #     web:
+  #       exposure:
+  #         include: health,info,metrics,prometheus
+  #   endpoint:
+  #     health:
+  #       show-details: always
+
+  # # (Opcional) Configuración MELIAN previa si la estás usando
+  # melian:
+  #   adapters:
+  #     enabled:
+  #       - sql
+  #       - filesystem
+  #     sql:
+  #       default-schema: sakila
+  #       chunking:
+  #         mode: row
+  #         max-chunks: 50
+  #         enrichment: true
+  #   embedding:
+  #     provider: ollama
+  #     model: nomic-embed-text
+  #     device: cpu
+  #     batch-size: 16
+  #     timeout-ms: 15000
+
+# Variables de entorno alternas:
+# SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, etc.
+
+tmdb:
+  api-url: https://api.themoviedb.org/3
+  access-token: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDdiMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y"

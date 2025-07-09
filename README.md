@@ -171,6 +171,15 @@ curl 'http://localhost:8090/mcp/metadata?source=rest'
 curl 'http://localhost:8090/mcp/chunks?table=film&filter=title=%27Thor%27&source=sql'
 ```
 
+
+### Herramientas de búsqueda de películas
+
+MELIAN expone tres herramientas simples para consultar películas desde distintos orígenes:
+
+- `search_movies_tmdb` consulta la API pública de TMDB.
+- `search_movies_sql` lee la tabla `film` de la base de datos SQL.
+- `search_movies_mongo` consulta la colección `film` en MongoDB.
+
 ---
 
 ## Roadmap

@@ -6,10 +6,13 @@ org/shark/melian/MelianApplication.class
 org/shark/melian/model/ForeignKeyShortDto.class
 org/shark/melian/model/ColumnMetadataDto.class
 org/shark/melian/service/SqlMetadataService.class
+org/shark/melian/service/MongoMovieChunkService.class
 org/shark/melian/controller/ChunkPageDto.class
 org/shark/melian/model/MongoDatabaseMetadataDto.class
 org/shark/melian/client/TMDBApiClient$TMDBMovie.class
+org/shark/melian/service/MovieChunkService.class
 org/shark/melian/service/RestApiChunkService.class
+org/shark/melian/controller/MovieController.class
 org/shark/melian/controller/ChunkController.class
 org/shark/melian/service/RestApiChunkService$TMDBResponse.class
 org/shark/melian/service/ChunkService.class
@@ -22,6 +25,7 @@ org/shark/melian/client/TMDBApiClient.class
 org/shark/melian/service/RestApiChunkService$TMDBMovie.class
 org/shark/melian/model/TableShortDto.class
 org/shark/melian/model/ColumnShortDto.class
+org/shark/melian/service/SqlMovieChunkService.class
 org/shark/melian/model/DatabaseMetadataDto.class
 org/shark/melian/service/RestApiMetadataService.class
 org/shark/melian/service/MovieToolService.class

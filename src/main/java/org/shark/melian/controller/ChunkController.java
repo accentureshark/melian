@@ -2,6 +2,7 @@ package org.shark.melian.controller;
 
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.service.ChunkService;
+import org.shark.melian.service.MovieChunkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,14 @@ public class ChunkController {
     @Autowired
     @Qualifier("mongoChunkService")
     private ChunkService mongoChunkService;
+    
+    @Autowired
+    @Qualifier("sqlMovieChunkService")
+    private MovieChunkService sqlMovieChunkService;
+    
+    @Autowired
+    @Qualifier("mongoMovieChunkService")
+    private MovieChunkService mongoMovieChunkService;
 
     @GetMapping
     public List<ChunkDto> getChunks(
@@ -37,6 +46,17 @@ public class ChunkController {
             @RequestParam(name = "tags", required = false) List<String> tags,
             @RequestParam(name = "sort", required = false) String sort
     ) {
+        // Handle movie-specific chunks
+        if ("movies".equalsIgnoreCase(table)) {
+            MovieChunkService movieService = switch (source.toLowerCase()) {
+                case "mongo", "mongodb" -> mongoMovieChunkService;
+                case "sql", "db" -> sqlMovieChunkService;
+                default -> sqlMovieChunkService; // default to SQL
+            };
+            return movieService.getMovieChunks(source, limit, afterId, filter, tags, sort);
+        }
+        
+        // Handle regular chunks
         ChunkService service = switch (source.toLowerCase()) {
             case "rest", "api", "tmdb" -> restApiChunkService;
             case "sql", "db" -> sqlChunkService;

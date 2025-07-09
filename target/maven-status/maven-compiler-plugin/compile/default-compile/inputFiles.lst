@@ -4,11 +4,13 @@
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/MelianApplication.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/client/TMDBApiClient.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/controller/ChunkPageDto.java
+/home/runner/work/melian/melian/src/main/java/org/shark/melian/controller/MovieController.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/service/MetadataService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/service/RestApiChunkService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/service/SqlChunkService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/service/MovieToolService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/controller/ChunkController.java
+/home/runner/work/melian/melian/src/main/java/org/shark/melian/service/MovieChunkService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/model/MongoDatabaseMetadataDto.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/model/DatabaseMetadataDto.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/model/TableShortDto.java
@@ -23,4 +25,6 @@
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/model/MovieResult.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/service/RestApiMetadataService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/model/TableMetadataDto.java
+/home/runner/work/melian/melian/src/main/java/org/shark/melian/service/MongoMovieChunkService.java
 /home/runner/work/melian/melian/src/main/java/org/shark/melian/controller/MetadataController.java
+/home/runner/work/melian/melian/src/main/java/org/shark/melian/service/SqlMovieChunkService.java

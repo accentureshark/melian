@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mb.MCP_Server.model.MongoDatabaseMetadataDto;
+import org.shark.melian.model.MongoDatabaseMetadataDto;
 
 import java.util.List;
 
@@ -43,9 +43,8 @@ public class MetadataController {
             return mongoMetadataService.extractShortSummary();
         }
 
-        if ("sql".equalsIgnoreCase(source)) {
-            return sqlMetadataService.extractShortSummary();
-        }        
+        // Default to SQL
+        return sqlMetadataService.extractShortSummary();
     }
 
     /**
@@ -63,8 +62,7 @@ public class MetadataController {
             return mongoMetadataService.extractMetadata();
         }
 
-        if ("sql".equalsIgnoreCase(source)) {
-            return sqlMetadataService.extractMetadata();
-        }        
+        // Default to SQL
+        return sqlMetadataService.extractMetadata();
     }
 }

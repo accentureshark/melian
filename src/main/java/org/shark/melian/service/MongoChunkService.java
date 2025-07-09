@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
-import com.mb.MCP_Server.model.ChunkDto;
+import org.shark.melian.model.ChunkDto;
 
 /*
  * Leer documentos desde una colección MongoDB, con paginación, filtros simples (igualdad o like), y devolver una lista de ChunkDto

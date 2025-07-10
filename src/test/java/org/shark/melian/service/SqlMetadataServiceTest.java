@@ -42,7 +42,7 @@ class SqlMetadataServiceTest {
         lenient().when(connection.getMetaData()).thenReturn(metaData);
         
         // Mock tables result set
-        lenient().when(metaData.getTables(null, null, "%", new String[]{"TABLE"})).thenReturn(resultSet);
+        lenient().when(metaData.getTables(isNull(), isNull(), eq("%"), eq(new String[]{"TABLE"}))).thenReturn(resultSet);
         lenient().when(resultSet.next()).thenReturn(true, true, false); // Two tables
         lenient().when(resultSet.getString("TABLE_NAME")).thenReturn("movies", "users");
     }
@@ -51,11 +51,11 @@ class SqlMetadataServiceTest {
     void testExtractShortSummary_ReturnsTables() throws Exception {
         // Given - mock columns for each table
         ResultSet columnsResultSet = mock(ResultSet.class);
-        when(metaData.getColumns(null, null, anyString(), "%")).thenReturn(columnsResultSet);
+        when(metaData.getColumns(isNull(), isNull(), anyString(), eq("%"))).thenReturn(columnsResultSet);
         when(columnsResultSet.next()).thenReturn(false); // No columns for simplicity
         
         ResultSet fkResultSet = mock(ResultSet.class);
-        when(metaData.getImportedKeys(null, null, anyString())).thenReturn(fkResultSet);
+        when(metaData.getImportedKeys(isNull(), isNull(), anyString())).thenReturn(fkResultSet);
         when(fkResultSet.next()).thenReturn(false); // No foreign keys
 
         // When
@@ -76,15 +76,15 @@ class SqlMetadataServiceTest {
     void testExtractMetadata_ReturnsCompleteMetadata() throws Exception {
         // Given - mock columns for each table
         ResultSet columnsResultSet = mock(ResultSet.class);
-        when(metaData.getColumns(null, null, anyString(), "%")).thenReturn(columnsResultSet);
+        when(metaData.getColumns(isNull(), isNull(), anyString(), eq("%"))).thenReturn(columnsResultSet);
         when(columnsResultSet.next()).thenReturn(false); // No columns for simplicity
 
         ResultSet pkResultSet = mock(ResultSet.class);
-        when(metaData.getPrimaryKeys(null, null, anyString())).thenReturn(pkResultSet);
+        when(metaData.getPrimaryKeys(isNull(), isNull(), anyString())).thenReturn(pkResultSet);
         when(pkResultSet.next()).thenReturn(false); // No primary keys
         
         ResultSet fkResultSet = mock(ResultSet.class);
-        when(metaData.getImportedKeys(null, null, anyString())).thenReturn(fkResultSet);
+        when(metaData.getImportedKeys(isNull(), isNull(), anyString())).thenReturn(fkResultSet);
         when(fkResultSet.next()).thenReturn(false); // No foreign keys
 
         // When

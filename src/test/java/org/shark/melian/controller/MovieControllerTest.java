@@ -132,9 +132,12 @@ class MovieControllerTest {
         String storage = "mongo";
         String source = "tmdb";
         int limit = 15;
-        
+        // Asegura que el mock devuelva una lista de tamaño 2
         when(mongoMovieChunkService.getMovieChunks(source, limit, null, null, null, null))
-                .thenReturn(mockChunks);
+                .thenReturn(List.of(
+                    new ChunkDto("1", "The Matrix content", null, null, null, null),
+                    new ChunkDto("2", "Inception content", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = movieController.getMovieChunks(storage, source, limit, null, null, null, null);
@@ -149,16 +152,19 @@ class MovieControllerTest {
     @Test
     void testGetMovieChunks_DefaultParameters() {
         // Given - using defaults: storage=sql, source=tmdb, limit=10
-        
-        when(sqlMovieChunkService.getMovieChunks("tmdb", 10, null, null, null, null))
-                .thenReturn(mockChunks);
+        when(sqlMovieChunkService.getMovieChunks(eq("tmdb"), eq(10), isNull(), isNull(), isNull(), isNull()))
+                .thenReturn(List.of(
+                    new ChunkDto("1", "The Matrix content", null, null, null, null),
+                    new ChunkDto("2", "Inception content", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = movieController.getMovieChunks("sql", "tmdb", 10, null, null, null, null);
 
         // Then
         assertNotNull(result);
-        verify(sqlMovieChunkService).getMovieChunks("tmdb", 10, null, null, null, null);
+        assertEquals(2, result.size());
+        verify(sqlMovieChunkService).getMovieChunks(eq("tmdb"), eq(10), isNull(), isNull(), isNull(), isNull());
     }
 
     @Test

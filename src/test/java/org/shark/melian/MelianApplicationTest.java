@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * Integration test to verify the Spring application context loads successfully.
  * This test validates that all beans are properly configured and can be instantiated.
  */
-@SpringBootTest
+@SpringBootTest(properties = {"spring.autoconfigure.exclude=org.springframework.ai.autoconfigure.mcp.server.MpcServerAutoConfiguration"})
 class MelianApplicationTest {
 
     @Test

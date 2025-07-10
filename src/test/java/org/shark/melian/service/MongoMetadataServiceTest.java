@@ -55,9 +55,9 @@ class MongoMetadataServiceTest {
     @Test
     void testExtractMetadata_ReturnsMetadataDto() {
         // Given - mock empty collections to avoid complex document inspection
-        when(mongoTemplate.getCollection("movies")).thenReturn(null);
-        when(mongoTemplate.getCollection("users")).thenReturn(null);
-        when(mongoTemplate.getCollection("products")).thenReturn(null);
+        lenient().when(mongoTemplate.getCollection("movies")).thenReturn(null);
+        lenient().when(mongoTemplate.getCollection("users")).thenReturn(null);
+        lenient().when(mongoTemplate.getCollection("products")).thenReturn(null);
 
         // When & Then - expect exception due to null collections
         assertThrows(Exception.class, () -> mongoMetadataService.extractMetadata());

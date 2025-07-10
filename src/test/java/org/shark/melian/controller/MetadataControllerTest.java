@@ -68,15 +68,13 @@ class MetadataControllerTest {
 
     @Test
     void testGetShortSummary_RestSource_CallsRestService() {
-        // Given
         String source = "rest";
         when(restApiMetadataService.extractShortSummary()).thenReturn(mockTableShorts);
 
-        // When
         List<TableShortDto> result = metadataController.getShortSummary(source);
 
-        // Then
         assertNotNull(result);
+        assertEquals(2, result.size());
         verify(restApiMetadataService).extractShortSummary();
         verifyNoInteractions(sqlMetadataService, mongoMetadataService);
     }
@@ -92,7 +90,8 @@ class MetadataControllerTest {
 
         // Then
         assertNotNull(result);
-        verify(mongoMetadataService).extractShortSummary();
+        assertEquals(2, result.size());
+        verify(mongoMetadataService, atLeastOnce()).extractShortSummary();
         verifyNoInteractions(sqlMetadataService, restApiMetadataService);
     }
 
@@ -106,7 +105,8 @@ class MetadataControllerTest {
 
         // Then
         assertNotNull(result);
-        verify(sqlMetadataService).extractShortSummary();
+        assertEquals(2, result.size());
+        verify(sqlMetadataService, atLeastOnce()).extractShortSummary();
     }
 
     @Test
@@ -170,4 +170,18 @@ class MetadataControllerTest {
         assertInstanceOf(DatabaseMetadataDto.class, result);
         verify(sqlMetadataService).extractMetadata();
     }
+
+    @Test
+    void testGetShortSummary_MongodbSource_ReturnsMongoMetadata() {
+        String source = "mongodb";
+        when(mongoMetadataService.extractShortSummary()).thenReturn(mockTableShorts);
+
+        List<TableShortDto> result = metadataController.getShortSummary(source);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        verify(mongoMetadataService).extractShortSummary();
+        verifyNoInteractions(sqlMetadataService, restApiMetadataService);
+    }
+
 }

@@ -53,8 +53,11 @@ class ChunkControllerTest {
         String table = "movies";
         String source = "sql";
         int limit = 10;
-        when(sqlChunkService.getChunks(table, source, limit, null, null, null, null))
-                .thenReturn(mockChunks);
+        when(sqlChunkService.getChunks(eq(table), eq(source), eq(limit), isNull(), isNull(), isNull(), isNull()))
+                .thenReturn(List.of(
+                    new ChunkDto("1", "Movie content 1", null, null, null, null),
+                    new ChunkDto("2", "Movie content 2", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = chunkController.getChunks(table, source, limit, null, null, null, null);
@@ -62,7 +65,7 @@ class ChunkControllerTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(sqlChunkService).getChunks(table, source, limit, null, null, null, null);
+        verify(sqlChunkService).getChunks(eq(table), eq(source), eq(limit), isNull(), isNull(), isNull(), isNull());
         verifyNoInteractions(restApiChunkService, mongoChunkService);
     }
 
@@ -90,15 +93,19 @@ class ChunkControllerTest {
         String table = "movies";
         String source = "mongodb";
         int limit = 15;
-        when(mongoChunkService.getChunks(table, source, limit, null, null, null, null))
-                .thenReturn(mockChunks);
+        when(mongoChunkService.getChunks(eq(table), eq(source), eq(limit), isNull(), isNull(), isNull(), isNull()))
+                .thenReturn(List.of(
+                    new ChunkDto("1", "Movie content 1", null, null, null, null),
+                    new ChunkDto("2", "Movie content 2", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = chunkController.getChunks(table, source, limit, null, null, null, null);
 
         // Then
         assertNotNull(result);
-        verify(mongoChunkService).getChunks(table, source, limit, null, null, null, null);
+        assertEquals(2, result.size());
+        verify(mongoChunkService).getChunks(eq(table), eq(source), eq(limit), isNull(), isNull(), isNull(), isNull());
         verifyNoInteractions(sqlChunkService, restApiChunkService);
     }
 
@@ -108,15 +115,19 @@ class ChunkControllerTest {
         String table = "movies";
         String source = "sql";
         int limit = 10;
-        when(sqlMovieChunkService.getMovieChunks(source, limit, null, null, null, null))
-                .thenReturn(mockChunks);
+        when(sqlMovieChunkService.getMovieChunks(eq(source), eq(limit), isNull(), isNull(), isNull(), isNull()))
+                .thenReturn(List.of(
+                    new ChunkDto("1", "Movie content 1", null, null, null, null),
+                    new ChunkDto("2", "Movie content 2", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = chunkController.getChunks(table, source, limit, null, null, null, null);
 
         // Then
         assertNotNull(result);
-        verify(sqlMovieChunkService).getMovieChunks(source, limit, null, null, null, null);
+        assertEquals(2, result.size());
+        verify(sqlMovieChunkService).getMovieChunks(eq(source), eq(limit), isNull(), isNull(), isNull(), isNull());
         verifyNoInteractions(sqlChunkService, restApiChunkService, mongoChunkService);
     }
 
@@ -126,15 +137,19 @@ class ChunkControllerTest {
         String table = "movies";
         String source = "mongodb";
         int limit = 10;
-        when(mongoMovieChunkService.getMovieChunks(source, limit, null, null, null, null))
-                .thenReturn(mockChunks);
+        when(mongoMovieChunkService.getMovieChunks(eq(source), eq(limit), isNull(), isNull(), isNull(), isNull()))
+                .thenReturn(List.of(
+                    new ChunkDto("1", "Movie content 1", null, null, null, null),
+                    new ChunkDto("2", "Movie content 2", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = chunkController.getChunks(table, source, limit, null, null, null, null);
 
         // Then
         assertNotNull(result);
-        verify(mongoMovieChunkService).getMovieChunks(source, limit, null, null, null, null);
+        assertEquals(2, result.size());
+        verify(mongoMovieChunkService).getMovieChunks(eq(source), eq(limit), isNull(), isNull(), isNull(), isNull());
         verifyNoInteractions(sqlChunkService, restApiChunkService, mongoChunkService);
     }
 
@@ -177,15 +192,18 @@ class ChunkControllerTest {
         String filter = "title='Matrix'";
         List<String> tags = List.of("action", "sci-fi");
         String sort = "title";
-        
-        when(sqlChunkService.getChunks(table, source, limit, afterId, filter, tags, sort))
-                .thenReturn(mockChunks);
+        when(sqlChunkService.getChunks(eq(table), eq(source), eq(limit), eq(afterId), eq(filter), eq(tags), eq(sort)))
+                .thenReturn(List.of(
+                    new ChunkDto("1", "Movie content 1", null, null, null, null),
+                    new ChunkDto("2", "Movie content 2", null, null, null, null)
+                ));
 
         // When
         List<ChunkDto> result = chunkController.getChunks(table, source, limit, afterId, filter, tags, sort);
 
         // Then
         assertNotNull(result);
-        verify(sqlChunkService).getChunks(table, source, limit, afterId, filter, tags, sort);
+        assertEquals(2, result.size());
+        verify(sqlChunkService).getChunks(eq(table), eq(source), eq(limit), eq(afterId), eq(filter), eq(tags), eq(sort));
     }
 }

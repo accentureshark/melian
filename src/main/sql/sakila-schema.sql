@@ -1,7 +1,6 @@
 CREATE
 DATABASE IF NOT EXISTS sakila;
-USE
-sakila;
+USE sakila;
 
 DROP TABLE IF EXISTS film_actor;
 DROP TABLE IF EXISTS film_category;

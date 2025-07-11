@@ -20,8 +20,8 @@ services:
     depends_on:
       - mongo
     volumes:
-      - ./src/main/mongo/data:/data
-    command: [ "bash", "/data/init.sh" ]
+      - ./src/main/mongo/init.sh:/init.sh
+    command: [ "bash", "/init.sh" ]
 
 volumes:
   mongo_data:

@@ -12,7 +12,12 @@ import java.util.List;
 @SpringBootApplication
 public class MelianApplication {
     public static void main(String[] args) {
-        SpringApplication.run(MelianApplication.class, args);
+        try {
+            SpringApplication.run(MelianApplication.class, args);
+        } catch (Exception e) {
+            System.err.println("BOOT ERROR" + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Bean

@@ -33,6 +33,20 @@ public class MovieToolService {
         log.info("[MovieToolService] Initialized with MCP-compliant services");
     }
 
+    @Tool(name = "search_movies_by_mcp_server", description = "Busca películas por título usando el servidor MCP especificado (tmdb o mongo)")
+    public List<MovieResult> searchMoviesByMcpServer(String mcpServer, String title, Integer limit) {
+        int realLimit = limit != null ? limit : 3;
+        switch (mcpServer.toLowerCase()) {
+            case "tmdb":
+                return tmdbService.search(title, realLimit);
+            case "mongo":
+                // Solo busca en Mongo, no almacena
+                return mongoMovieChunkService.searchAndStore(title, realLimit, false);
+            default:
+                throw new IllegalArgumentException("Servidor MCP no soportado: " + mcpServer);
+        }
+    }
+
     @Tool(name = "search_movies_by_tmdb_api", description = "Busca peliculas por titulo usando la API de TMDB")
     public List<MovieResult> searchMovies(String title, Integer limit) {
         return tmdbService.search(title, limit != null ? limit : 3);

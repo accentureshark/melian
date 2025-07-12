@@ -19,3 +19,26 @@ services:
       timeout: 10s
       retries: 10
 
+  mongo:
+    image: mongo:7
+    container_name: mcp-mongo
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-init:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    container_name: mcp-mongo-init
+    depends_on:
+      - mongo
+    volumes:
+      - ./src/main/mongo/init.sh:/init.sh
+    command: [ "bash", "/init.sh" ]
+
+volumes:
+  mongo_data:

@@ -14,7 +14,7 @@ services:
       - ./src/main/sql/sakila-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
       - ./src/main/sql/sakila-data.sql:/docker-entrypoint-initdb.d/2-data.sql
     healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-hsakila", "-psakila" ]
+      test: [ "CMD", "mysqladmin", "ping", "-usakila", "-psakila" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -39,6 +39,9 @@ services:
     volumes:
       - ./src/main/mongo/init.sh:/init.sh
     command: [ "bash", "/init.sh" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
 
 volumes:
   mongo_data:

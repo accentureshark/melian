@@ -13,44 +13,42 @@ spring:
         resource-change-notification: true
         tool-change-notification: true
         prompt-change-notification: true
+
   main:
     web-application-type: none
     banner-mode: off
 
-  # Database configuration
   datasource:
-    # H2 for testing or MySQL for production
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password: password
-    driver-class-name: org.h2.Driver
-    
+    url: jdbc:mysql://localhost:3307/sakila
+    username: sakila
+    password: sakila
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        
+        dialect: org.hibernate.dialect.MySQLDialect
+
   data:
     mongodb:
-      # MongoDB configuration
       host: localhost
       port: 27017
       database: melian_movies
-      # username: admin
-      # password: admin
+      username: root
+      password: example
 
-# TMDB API configuration      
 tmdb:
   api-url: https://api.themoviedb.org/3
   access-token: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y"
 
-# Logging configuration
 logging:
   pattern:
     console: ""
   level:
-    root: INFO
+    root: DEBUG
+    org.springframework: DEBUG
     org.shark.melian: DEBUG
+    org.springframework.context: DEBUG

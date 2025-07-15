@@ -44,6 +44,11 @@ tmdb:
   api-url: https://api.themoviedb.org/3
   access-token: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y"
 
+melian:
+  filesystem:
+    scan:
+      directory: "/tmp/melian-scan"
+
 logging:
   pattern:
     console: ""

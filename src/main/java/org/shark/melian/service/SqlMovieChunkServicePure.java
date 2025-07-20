@@ -155,7 +155,7 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
                 rating DECIMAL(3,1),
                 source VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_title_source (title, source)
+                CONSTRAINT unique_title_source UNIQUE (title, source)
             )
             """;
         

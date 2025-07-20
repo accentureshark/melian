@@ -130,46 +130,66 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 
 ---
 
-## ¿Cómo levantar el servidor MELIAN?
+## ¿Cómo ejecutar el servidor MCP de MELIAN?
 
-1. Requisitos:
-    - Java 17+
-    - Maven 3.8+
-    - Docker (opcional, para levantar base de datos como Sakila)
-    - MySQL local o remoto (puede usarse `docker-compose` incluido)
-
-2. Comando para levantar localmente con Maven:
+### Opción rápida (recomendada):
 
 ```bash
+# Usar el script incluido - opción más fácil
+./run-mcp-server.sh
+
+# Con bases de datos completas
+./run-mcp-server.sh -d
+
+# Ver todas las opciones
+./run-mcp-server.sh --help
+```
+
+### Opción manual:
+
+1. **Requisitos:**
+    - Java 17+
+    - Maven 3.8+
+    - Docker (opcional, para bases de datos)
+
+2. **Ejecutar el servidor MCP:**
+
+```bash
+# Compilar y ejecutar
+mvn clean compile
 mvn spring-boot:run -Dspring.profiles.active=default
 ```
 
-3. Usar variables de entorno desde `.env` con:
+3. **Con variables de entorno personalizadas:**
 
 ```bash
 env $(cat .env | xargs) mvn spring-boot:run
 ```
 
-4. Endpoints disponibles:
+### ⚠️ Importante: Este es un servidor MCP, NO un servidor web
 
-| Endpoint                 | Descripción                          |
+- **Comunicación**: STDIO (JSON-RPC), no HTTP
+- **Puerto**: No aplica - usa entrada/salida estándar
+- **Clientes**: Compatible con Claude Desktop, VS Code MCP, etc.
+
+### Herramientas MCP disponibles:
+
+| Herramienta               | Descripción                          |
 |--------------------------|--------------------------------------|
-| `/mcp/metadata`          | Metadata completa                    |
-| `/mcp/metadata/short`    | Metadata reducida (resumen)         |
-| `/mcp/chunks`            | Chunks de contenido (con filtros)   |
+| `search_movies_by_title` | Buscar películas por título         |
+| `search_movies_by_genre` | Buscar películas por género         |
+| `get_movie_details`      | Obtener detalles de película        |
+| `get_popular_movies`     | Obtener películas populares         |
+| `search_movies_by_actor` | Buscar películas por actor          |
 
-5. Ejemplos:
+### Verificar instalación:
 
 ```bash
-# Metadata completa desde SQL
-curl 'http://localhost:8090/mcp/metadata?source=sql'
-
-# Metadata via REST (TMDB)
-curl 'http://localhost:8090/mcp/metadata?source=rest'
-
-# Chunks filtrados por título
-curl 'http://localhost:8090/mcp/chunks?table=film&filter=title=%27Thor%27&source=sql'
+# Ejecutar tests completos
+./test-mcp-server.sh
 ```
+
+📖 **Documentación completa**: Ver `RUN_MCP_SERVER.md` para instrucciones detalladas
 
 ---
 

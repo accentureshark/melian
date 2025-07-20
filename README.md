@@ -210,8 +210,13 @@ java -jar target/melian-0.1.0-SNAPSHOT.jar
 
 Cuando el servidor esté corriendo verás:
 ```
+INFO  -- MelianMcpTools initialized
+INFO  -- MelianMcpResources initialized
+INFO  -- Created MCP server with 3 tools and 3 resources
 INFO  -- MELIAN MCP Server started with STDIO transport
 INFO  -- Server is ready to accept MCP connections via STDIO...
+INFO  -- Available tools: search_movies, get_movie_chunks, get_server_status
+INFO  -- Available resources: movies/metadata, movies/chunks, server/docs
 ```
 
 ### 📖 Documentación detallada
@@ -222,8 +227,14 @@ Para instrucciones completas, troubleshooting y configuración avanzada:
 ### 🎯 Funcionalidades del servidor MCP
 
 El servidor proporciona:
-- 🔍 **Herramientas MCP**: Búsqueda de películas, obtener detalles, etc.
-- 📊 **Recursos MCP**: Metadata y chunks para sistemas RAG
+- 🔍 **3 Herramientas MCP**:
+  - `search_movies`: Búsqueda de películas usando TMDB API
+  - `get_movie_chunks`: Obtener chunks de datos para aplicaciones RAG
+  - `get_server_status`: Estado y configuración del servidor
+- 📊 **3 Recursos MCP**:
+  - `movies/metadata`: Metadata y esquema de la base de datos
+  - `movies/chunks`: Chunks de datos de películas para RAG
+  - `server/docs`: Documentación del servidor y guía de uso
 - 🗄️ **Múltiples fuentes**: SQL (H2/MySQL), MongoDB, TMDB API
 - 🚀 **Protocolo estándar**: Compatible con cualquier cliente MCP
 

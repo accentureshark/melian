@@ -138,54 +138,105 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 
 ---
 
-## ¿Cómo levantar el servidor MELIAN?
+## 🚀 ¿Cómo ejecutar el servidor MCP de MELIAN?
 
-1. Requisitos:
-    - Java 17+
-    - Maven 3.8+ (solo para compilación)
-    - Docker (opcional, para levantar base de datos como MongoDB)
-    - MySQL local o remoto (opcional)
+### Opción 1: Script Automático (Recomendado)
 
-2. Compilar y empaquetar el servidor:
+```bash
+# Hacer el script ejecutable (solo la primera vez)
+chmod +x run-mcp-server.sh
 
+# Ejecutar con asistente interactivo
+./run-mcp-server.sh
+```
+
+El script te guiará paso a paso para:
+- ✅ Verificar requisitos (Java 17+)
+- ✅ Compilar si es necesario
+- ✅ Configurar bases de datos opcionales
+- ✅ Levantar Docker si es requerido
+- ✅ Configurar token TMDB
+- ✅ Ejecutar el servidor
+
+### Opción 2: Ejecución Manual
+
+#### 1. Requisitos previos:
+- **Java 17+** (`java --version`)
+- **Maven 3.8+** (solo para compilación)
+- **Docker** (opcional, para MongoDB/MySQL)
+- **Token TMDB** (opcional, para búsquedas reales)
+
+#### 2. Compilar el proyecto:
 ```bash
 mvn clean package -DskipTests
 ```
 
-3. Ejecutar el servidor MCP usando el JAR standalone:
-
+#### 3. Ejecución básica (H2 en memoria):
 ```bash
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
-4. Usar variables de entorno para configuración:
-
+#### 4. Ejecución completa con configuración:
 ```bash
-# Configurar TMDB API
-export TMDB_ACCESS_TOKEN="tu_token_tmdb"
+# Token TMDB (recomendado)
+export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
 
-# Configurar base de datos (opcional)
-export DB_URL="jdbc:mysql://localhost:3306/melian"
-export DB_USERNAME="usuario"
-export DB_PASSWORD="contraseña"
+# Base de datos MySQL (opcional)
+export DB_URL="jdbc:mysql://localhost:3307/sakila"
+export DB_USERNAME="sakila"
+export DB_PASSWORD="sakila"
 
-# Configurar MongoDB (opcional)
-export MONGODB_URI="mongodb://localhost:27017"
+# MongoDB (opcional)
+export MONGODB_URI="mongodb://root:example@localhost:27017"
 export MONGODB_DATABASE="melian"
 
-# Ejecutar el servidor
+# Ejecutar servidor
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
-5. Endpoints MCP disponibles:
+#### 5. Con Docker (bases de datos completas):
+```bash
+# Levantar bases de datos
+docker-compose up -d
 
-El servidor implementa el protocolo MCP estándar vía STDIO. Para probarlo desde línea de comandos, puede conectarse a través de STDIN/STDOUT.
+# Configurar variables
+export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
 
-El servidor proporciona acceso a:
-- Búsqueda de películas desde TMDB API
-- Almacenamiento en SQL (H2 en memoria por defecto)
-- Almacenamiento en MongoDB
-- Recuperación de chunks de datos para sistemas RAG
+# Ejecutar servidor
+java -jar target/melian-0.1.0-SNAPSHOT.jar
+```
+
+### ✅ Verificación del servidor
+
+Cuando el servidor esté corriendo verás:
+```
+INFO  -- MelianMcpTools initialized
+INFO  -- MelianMcpResources initialized
+INFO  -- Created MCP server with 3 tools and 3 resources
+INFO  -- MELIAN MCP Server started with STDIO transport
+INFO  -- Server is ready to accept MCP connections via STDIO...
+INFO  -- Available tools: search_movies, get_movie_chunks, get_server_status
+INFO  -- Available resources: movies/metadata, movies/chunks, server/docs
+```
+
+### 📖 Documentación detallada
+
+Para instrucciones completas, troubleshooting y configuración avanzada:
+- **[📘 Guía Completa de Ejecución](./EJECUTAR_SERVIDOR_MCP.md)**
+
+### 🎯 Funcionalidades del servidor MCP
+
+El servidor proporciona:
+- 🔍 **3 Herramientas MCP**:
+  - `search_movies`: Búsqueda de películas usando TMDB API
+  - `get_movie_chunks`: Obtener chunks de datos para aplicaciones RAG
+  - `get_server_status`: Estado y configuración del servidor
+- 📊 **3 Recursos MCP**:
+  - `movies/metadata`: Metadata y esquema de la base de datos
+  - `movies/chunks`: Chunks de datos de películas para RAG
+  - `server/docs`: Documentación del servidor y guía de uso
+- 🗄️ **Múltiples fuentes**: SQL (H2/MySQL), MongoDB, TMDB API
+- 🚀 **Protocolo estándar**: Compatible con cualquier cliente MCP
 
 ---
 

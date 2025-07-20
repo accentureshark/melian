@@ -1,29 +1,28 @@
 package org.shark.melian.service;
 
-import org.shark.melian.client.TMDBApiClient;
-import org.shark.melian.client.TMDBApiClient.TMDBMovie;
-import org.shark.melian.client.TMDBApiClient.TMDBResponse;
+import org.shark.melian.client.TMDBApiClientPure;
+import org.shark.melian.client.TMDBApiClientPure.TMDBMovie;
+import org.shark.melian.client.TMDBApiClientPure.TMDBResponse;
 import org.shark.melian.model.MovieResult;
-import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
- * Simplified MCP-compliant TMDB service for external API calls only.
- * Storage functionality moved to dedicated MovieChunkService implementations.
+ * Pure Java TMDB service without Spring dependencies.
+ * Provides movie search functionality using TMDB API.
  */
-@Service
-public class TMDBService {
+public class TMDBServicePure {
     
-    private static final Logger log = Logger.getLogger(TMDBService.class.getName());
-    private final TMDBApiClient tmdbApiClient;
+    private static final Logger log = LoggerFactory.getLogger(TMDBServicePure.class);
+    private final TMDBApiClientPure tmdbApiClient;
 
-    public TMDBService(TMDBApiClient tmdbApiClient) {
+    public TMDBServicePure(TMDBApiClientPure tmdbApiClient) {
         this.tmdbApiClient = tmdbApiClient;
-        log.info("[TMDBService] Initialized");
+        log.info("[TMDBServicePure] Initialized");
     }
 
     public List<MovieResult> search(String title, int limit) {
@@ -31,19 +30,19 @@ public class TMDBService {
     }
 
     public List<MovieResult> searchByParams(Map<String, String> params, int limit) {
-        log.info("[TMDBService] Searching with params: " + params);
+        log.info("[TMDBServicePure] Searching with params: {}", params);
         
         TMDBResponse response = tmdbApiClient.searchMovies(params);
         if (response == null || response.results == null || response.results.isEmpty()) {
-            log.info("[TMDBService] No movie results found");
+            log.info("[TMDBServicePure] No movie results found");
             return List.of();
         }
 
-        log.info("[TMDBService] Found " + response.results.size() + " movie(s)");
+        log.info("[TMDBServicePure] Found {} movie(s)", response.results.size());
         List<MovieResult> results = new ArrayList<>();
         for (TMDBMovie movie : response.results) {
-            log.info(String.format("[TMDBService] Movie: %s (%s) | Rating: %.2f", 
-                    movie.title, movie.release_date, movie.vote_average));
+            log.info("[TMDBServicePure] Movie: {} ({}) | Rating: {:.2f}", 
+                    movie.title, movie.release_date, movie.vote_average);
             results.add(new MovieResult(
                     movie.title,
                     movie.overview,

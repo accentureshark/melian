@@ -65,14 +65,22 @@ Además, MELIAN permite elegir la fuente de datos (`source=sql` o `source=rest`)
 
 ---
 
-## Arquitectura Flexible
+## Arquitectura Refactorizada (Sin Spring Boot)
 
-![MCP Server Components](./docs/images/MCPServerComponents.png)
+MELIAN ahora utiliza el **SDK oficial de MCP de Java** (`io.modelcontextprotocol.sdk:mcp:0.10.0`) en lugar de Spring Boot, proporcionando:
 
-**Descripción:**
-- MELIAN enruta solicitudes según el origen de datos (`source`).
-- Usa un `ChunkService` y `MetadataService` intercambiables.
-- Se puede extender a nuevos backends (Mongo, GraphQL, CSV...) sin modificar los controladores.
+- ✅ **MCP Compliance Nativo**: Implementación directa del protocolo MCP sin abstracciones adicionales
+- ✅ **Menor Overhead**: Sin dependencias de Spring Boot ni framework web
+- ✅ **Startup Rápido**: Inicio más rápido al eliminar el contenedor Spring
+- ✅ **Menor Tamaño**: JAR más pequeño y eficiente en memoria
+- ✅ **Pure Java**: Configuración basada en código Java puro sin anotaciones mágicas
+
+### Componentes Principales:
+
+- **MelianMcpServer**: Servidor principal usando MCP SDK oficial
+- **Pure Services**: Servicios sin dependencias de Spring (TMDBServicePure, SqlMovieChunkServicePure, MongoMovieChunkServicePure)
+- **Configuration**: Gestión de configuración basada en properties y variables de entorno
+- **STDIO Transport**: Comunicación MCP nativa vía STDIN/STDOUT
 
 ---
 
@@ -134,49 +142,52 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 
 1. Requisitos:
     - Java 17+
-    - Maven 3.8+
-    - Docker (opcional, para levantar base de datos como Sakila)
-    - MySQL local o remoto (puede usarse `docker-compose` incluido)
+    - Maven 3.8+ (solo para compilación)
+    - Docker (opcional, para levantar base de datos como MongoDB)
+    - MySQL local o remoto (opcional)
 
-2. Comando para levantar localmente con Maven:
-
-```bash
-mvn spring-boot:run -Dspring.profiles.active=default
-```
-
-3. Usar variables de entorno desde `.env` con:
+2. Compilar y empaquetar el servidor:
 
 ```bash
-env $(cat .env | xargs) mvn spring-boot:run
+mvn clean package -DskipTests
 ```
 
-4. Endpoints disponibles:
-
-| Endpoint                 | Descripción                          |
-|--------------------------|--------------------------------------|
-| `/mcp/metadata`          | Metadata completa                    |
-| `/mcp/metadata/short`    | Metadata reducida (resumen)         |
-| `/mcp/chunks`            | Chunks de contenido (con filtros)   |
-
-5. Ejemplos:
+3. Ejecutar el servidor MCP usando el JAR standalone:
 
 ```bash
-# Metadata completa desde SQL
-curl 'http://localhost:8090/mcp/metadata?source=sql'
-
-# Metadata via REST (TMDB)
-curl 'http://localhost:8090/mcp/metadata?source=rest'
-
-# Chunks filtrados por título
-curl 'http://localhost:8090/mcp/chunks?table=film&filter=title=%27Thor%27&source=sql'
+java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
+
+4. Usar variables de entorno para configuración:
+
+```bash
+# Configurar TMDB API
+export TMDB_ACCESS_TOKEN="tu_token_tmdb"
+
+# Configurar base de datos (opcional)
+export DB_URL="jdbc:mysql://localhost:3306/melian"
+export DB_USERNAME="usuario"
+export DB_PASSWORD="contraseña"
+
+# Configurar MongoDB (opcional)
+export MONGODB_URI="mongodb://localhost:27017"
+export MONGODB_DATABASE="melian"
+
+# Ejecutar el servidor
+java -jar target/melian-0.1.0-SNAPSHOT.jar
+```
+
+5. Endpoints MCP disponibles:
+
+El servidor implementa el protocolo MCP estándar vía STDIO. Para probarlo desde línea de comandos, puede conectarse a través de STDIN/STDOUT.
+
+El servidor proporciona acceso a:
+- Búsqueda de películas desde TMDB API
+- Almacenamiento en SQL (H2 en memoria por defecto)
+- Almacenamiento en MongoDB
+- Recuperación de chunks de datos para sistemas RAG
 
 ---
 
 ## Roadmap
 
-- ✅ Soporte para SQL con chunking y metadata enriquecida
-- ✅ Integración con APIs REST externas como TMDB
-- 🔄 Embedding vía LangChain4j, Ollama, OpenAI, etc.
-- 🔜 Plugin system para reglas de negocio
-- 🔜 Documentación y ejemplos para cada “sabor” MELIAN

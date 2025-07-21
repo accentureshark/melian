@@ -3,53 +3,81 @@ package org.shark.melian.mcp;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.shark.melian.service.MovieChunkService;
+import org.shark.melian.service.ResourceService;
 import org.shark.melian.service.TMDBServicePure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * MCP Resources implementation for MELIAN metadata and chunks.
  * Provides resources for movie metadata, database schema, and chunk data.
  */
-public class MelianMcpResources {
-    
+public class MelianMcpResources implements ResourceService {
+
     private static final Logger log = LoggerFactory.getLogger(MelianMcpResources.class);
-    
+
     private final TMDBServicePure tmdbService;
     private final MovieChunkService sqlMovieService;
     private final MovieChunkService mongoMovieService;
-    
-    public MelianMcpResources(TMDBServicePure tmdbService, 
-                             MovieChunkService sqlMovieService, 
-                             MovieChunkService mongoMovieService) {
+
+    public MelianMcpResources(TMDBServicePure tmdbService,
+                              MovieChunkService sqlMovieService,
+                              MovieChunkService mongoMovieService) {
         this.tmdbService = tmdbService;
         this.sqlMovieService = sqlMovieService;
         this.mongoMovieService = mongoMovieService;
         log.info("MelianMcpResources initialized");
     }
-    
+
     /**
      * Resource definition for movie metadata
      */
     public static McpSchema.Resource movieMetadataResourceDef() {
         return new McpSchema.Resource(
-            "movies/metadata",
-            "Movie database metadata and schema information",
-            "Movie database metadata and schema information",
-            "application/json",
-            null
+                "movies/metadata",
+                "Movie database metadata and schema information",
+                "Movie database metadata and schema information",
+                "application/json",
+                null
         );
     }
-    
+
+    /**
+     * Resource definition for movie chunks
+     */
+    public static McpSchema.Resource movieChunksResourceDef() {
+        return new McpSchema.Resource(
+                "movies/chunks",
+                "Movie data chunks for RAG applications",
+                "Movie data chunks for RAG applications",
+                "text/plain",
+                null
+        );
+    }
+
+    /**
+     * Resource definition for server documentation
+     */
+    public static McpSchema.Resource serverDocsResourceDef() {
+        return new McpSchema.Resource(
+                "server/docs",
+                "MELIAN MCP Server documentation and usage guide",
+                "MELIAN MCP Server documentation and usage guide",
+                "text/markdown",
+                null
+        );
+    }
+
     /**
      * Handler for movie metadata resource
      */
     public McpSchema.ReadResourceResult readMovieMetadata(McpSyncServerExchange exchange, McpSchema.ReadResourceRequest request) {
         try {
             log.info("Reading movie metadata resource");
-            
+
             StringBuilder metadata = new StringBuilder();
             metadata.append("{\n");
             metadata.append("  \"database\": {\n");
@@ -84,54 +112,41 @@ public class MelianMcpResources {
             metadata.append("    \"status\": \"/mcp/tools/get_server_status\"\n");
             metadata.append("  }\n");
             metadata.append("}\n");
-            
+
             log.info("Movie metadata resource read successfully");
-            
+
             return new McpSchema.ReadResourceResult(
-                List.of(new McpSchema.TextResourceContents(
-                    "movies/metadata",
-                    "application/json",
-                    metadata.toString()
-                ))
+                    List.of(new McpSchema.TextResourceContents(
+                            "movies/metadata",
+                            "application/json",
+                            metadata.toString()
+                    ))
             );
-            
+
         } catch (Exception e) {
             log.error("Error reading movie metadata resource", e);
             return new McpSchema.ReadResourceResult(
-                List.of(new McpSchema.TextResourceContents(
-                    "movies/metadata",
-                    "text/plain",
-                    "Error reading metadata: " + e.getMessage()
-                ))
+                    List.of(new McpSchema.TextResourceContents(
+                            "movies/metadata",
+                            "text/plain",
+                            "Error reading metadata: " + e.getMessage()
+                    ))
             );
         }
     }
-    
-    /**
-     * Resource definition for movie chunks
-     */
-    public static McpSchema.Resource movieChunksResourceDef() {
-        return new McpSchema.Resource(
-            "movies/chunks",
-            "Movie data chunks for RAG applications",
-            "Movie data chunks for RAG applications",
-            "text/plain",
-            null
-        );
-    }
-    
+
     /**
      * Handler for movie chunks resource
      */
     public McpSchema.ReadResourceResult readMovieChunks(McpSyncServerExchange exchange, McpSchema.ReadResourceRequest request) {
         try {
             log.info("Reading movie chunks resource");
-            
+
             // Extract parameters from URI if provided
             String uri = request.uri();
             String source = "sql";  // default
             int limit = 5;          // default
-            
+
             // Simple parameter parsing from URI query string
             if (uri != null && uri.contains("?")) {
                 String query = uri.substring(uri.indexOf("?") + 1);
@@ -154,15 +169,15 @@ public class MelianMcpResources {
                     }
                 }
             }
-            
+
             // Get movie chunks using TMDB service as a proxy
             var movies = tmdbService.search("popular", limit);
-            
+
             StringBuilder chunks = new StringBuilder();
             chunks.append("MOVIE DATA CHUNKS FOR RAG APPLICATIONS\n");
             chunks.append("=====================================\n");
             chunks.append("Source: ").append(source.toUpperCase()).append(" | Limit: ").append(limit).append("\n\n");
-            
+
             for (int i = 0; i < movies.size(); i++) {
                 var movie = movies.get(i);
                 chunks.append("CHUNK ").append(i + 1).append(":\n");
@@ -172,95 +187,82 @@ public class MelianMcpResources {
                 chunks.append("Overview: ").append(movie.overview() != null ? movie.overview() : "No overview available").append("\n");
                 chunks.append("---\n\n");
             }
-            
+
             chunks.append("Total chunks: ").append(movies.size()).append("\n");
             chunks.append("Generated for RAG context and semantic search.\n");
-            
+
             log.info("Movie chunks resource read successfully - {} chunks from {}", movies.size(), source);
-            
+
             return new McpSchema.ReadResourceResult(
-                List.of(new McpSchema.TextResourceContents(
-                    "movies/chunks",
-                    "text/plain",
-                    chunks.toString()
-                ))
+                    List.of(new McpSchema.TextResourceContents(
+                            "movies/chunks",
+                            "text/plain",
+                            chunks.toString()
+                    ))
             );
-            
+
         } catch (Exception e) {
             log.error("Error reading movie chunks resource", e);
             return new McpSchema.ReadResourceResult(
-                List.of(new McpSchema.TextResourceContents(
-                    "movies/chunks",
-                    "text/plain",
-                    "Error reading chunks: " + e.getMessage()
-                ))
+                    List.of(new McpSchema.TextResourceContents(
+                            "movies/chunks",
+                            "text/plain",
+                            "Error reading chunks: " + e.getMessage()
+                    ))
             );
         }
     }
-    
-    /**
-     * Resource definition for server documentation
-     */
-    public static McpSchema.Resource serverDocsResourceDef() {
-        return new McpSchema.Resource(
-            "server/docs",
-            "MELIAN MCP Server documentation and usage guide",
-            "MELIAN MCP Server documentation and usage guide",
-            "text/markdown",
-            null
-        );
-    }
-    
+
     /**
      * Handler for server documentation resource
      */
     public McpSchema.ReadResourceResult readServerDocs(McpSyncServerExchange exchange, McpSchema.ReadResourceRequest request) {
         try {
             log.info("Reading server documentation resource");
-            
+
             StringBuilder docs = new StringBuilder();
             docs.append("# MELIAN MCP Server Documentation\n\n");
             docs.append("## Overview\n");
             docs.append("MELIAN is a Model Context Protocol (MCP) compliant server that provides movie data access and search capabilities.\n\n");
-            
+
             docs.append("## Available Tools\n\n");
             docs.append("### 1. search_movies\n");
             docs.append("Search for movies using TMDB API.\n");
             docs.append("**Parameters:**\n");
             docs.append("- `query` (required): Search term for movies\n");
             docs.append("- `limit` (optional): Maximum results (default: 10, max: 50)\n\n");
-            
+
             docs.append("### 2. get_movie_chunks\n");
             docs.append("Retrieve movie data chunks for RAG applications.\n");
             docs.append("**Parameters:**\n");
             docs.append("- `source` (optional): 'sql' or 'mongo' (default: 'sql')\n");
             docs.append("- `limit` (optional): Maximum chunks (default: 10, max: 100)\n");
             docs.append("- `filter` (optional): Filter criteria\n\n");
-            
+
             docs.append("### 3. get_server_status\n");
             docs.append("Get current server status and configuration.\n");
             docs.append("**Parameters:** None\n\n");
-            
+
             docs.append("## Available Resources\n\n");
             docs.append("### 1. movies/metadata\n");
             docs.append("Database schema and metadata information.\n");
             docs.append("**Format:** JSON\n\n");
-            
+
             docs.append("### 2. movies/chunks\n");
             docs.append("Movie data chunks for RAG context.\n");
             docs.append("**Format:** Plain text\n");
             docs.append("**Parameters:** ?source=sql|mongo&limit=N\n\n");
-            
+
             docs.append("### 3. server/docs\n");
             docs.append("This documentation.\n");
             docs.append("**Format:** Markdown\n\n");
-            
+
             docs.append("## Configuration\n");
             docs.append("The server can be configured using environment variables:\n");
             docs.append("- `TMDB_ACCESS_TOKEN`: TMDB API access token\n");
             docs.append("- `DB_URL`: Database connection URL\n");
             docs.append("- `MONGODB_URI`: MongoDB connection URI\n\n");
-            
+
             docs.append("## Usage Examples\n");
             docs.append("```\n");
             docs.append("# Search for movies\n");
@@ -270,26 +272,41 @@ public class MelianMcpResources {
             docs.append("# Check server status\n");
             docs.append("get_server_status({})\n");
             docs.append("```\n");
-            
+
             log.info("Server documentation resource read successfully");
-            
+
             return new McpSchema.ReadResourceResult(
-                List.of(new McpSchema.TextResourceContents(
-                    "server/docs",
-                    "text/markdown",
-                    docs.toString()
-                ))
+                    List.of(new McpSchema.TextResourceContents(
+                            "server/docs",
+                            "text/markdown",
+                            docs.toString()
+                    ))
             );
-            
+
         } catch (Exception e) {
             log.error("Error reading server documentation resource", e);
             return new McpSchema.ReadResourceResult(
-                List.of(new McpSchema.TextResourceContents(
-                    "server/docs",
-                    "text/plain",
-                    "Error reading documentation: " + e.getMessage()
-                ))
+                    List.of(new McpSchema.TextResourceContents(
+                            "server/docs",
+                            "text/plain",
+                            "Error reading documentation: " + e.getMessage()
+                    ))
             );
         }
+    }
+
+    @Override
+    public List<String> listResources() {
+        return List.of();
+    }
+
+    @Override
+    public Map<String, Object> capabilities() {
+        return Map.of();
+    }
+
+    @Override
+    public Object readResource(String uri) {
+        return null;
     }
 }

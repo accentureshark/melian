@@ -1,56 +1,47 @@
 package org.shark.melian.config;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 /**
  * Configuration management for MELIAN MCP Server.
- * Loads configuration from environment variables and properties files.
+ * Loads configuration from environment variables.
+ * Spring Boot maneja application.yml automáticamente.
  */
 public class MelianConfig {
-    
+
     private final Properties properties;
-    
+
     public MelianConfig() {
         this.properties = new Properties();
         loadProperties();
     }
-    
+
     private void loadProperties() {
-        // Load from application.properties if exists
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("application.properties")) {
-            if (is != null) {
-                properties.load(is);
-            }
-        } catch (IOException e) {
-            System.err.println("Warning: Could not load application.properties: " + e.getMessage());
-        }
-        
-        // Override with environment variables
+        // Spring Boot maneja application.yml automáticamente
+        // Esta clase solo maneja variables de entorno adicionales
         loadFromEnvironment();
     }
-    
+
     private void loadFromEnvironment() {
-        // Database configuration
-        setPropertyFromEnv("db.url", "DB_URL", "jdbc:h2:mem:melian;DB_CLOSE_DELAY=-1");
-        setPropertyFromEnv("db.username", "DB_USERNAME", "sa");
-        setPropertyFromEnv("db.password", "DB_PASSWORD", "");
-        setPropertyFromEnv("db.driver", "DB_DRIVER", "org.h2.Driver");
-        
-        // MongoDB configuration
-        setPropertyFromEnv("mongodb.uri", "MONGODB_URI", "mongodb://localhost:27017");
-        setPropertyFromEnv("mongodb.database", "MONGODB_DATABASE", "melian");
-        
+        // Database configuration - MySQL (eliminar H2)
+        setPropertyFromEnv("db.url", "DB_URL", "jdbc:mysql://mysql-sakila:3306/sakila");
+        setPropertyFromEnv("db.username", "DB_USERNAME", "sakila");
+        setPropertyFromEnv("db.password", "DB_PASSWORD", "sakila");
+        setPropertyFromEnv("db.driver", "DB_DRIVER", "com.mysql.cj.jdbc.Driver");
+
+        // MongoDB configuration - usar servicio Docker
+        setPropertyFromEnv("mongodb.uri", "MONGODB_URI", "mongodb://root:example@mongo:27017/melian_movies?authSource=admin");
+        setPropertyFromEnv("mongodb.database", "MONGODB_DATABASE", "melian_movies");
+
         // TMDB API configuration
         setPropertyFromEnv("tmdb.api-url", "TMDB_API_URL", "https://api.themoviedb.org/3");
-        setPropertyFromEnv("tmdb.access-token", "TMDB_ACCESS_TOKEN", "");
-        
-        // MCP Server configuration
+        setPropertyFromEnv("tmdb.access-token", "TMDB_ACCESS_TOKEN", "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y");
+
+        // MCP Server configuration - usar 0.0.0.0 para Docker
         setPropertyFromEnv("mcp.server.port", "MCP_SERVER_PORT", "3000");
-        setPropertyFromEnv("mcp.server.host", "MCP_SERVER_HOST", "localhost");
+        setPropertyFromEnv("mcp.server.host", "MCP_SERVER_HOST", "0.0.0.0");
     }
-    
+
     private void setPropertyFromEnv(String propKey, String envKey, String defaultValue) {
         String envValue = System.getenv(envKey);
         if (envValue != null && !envValue.trim().isEmpty()) {
@@ -59,15 +50,15 @@ public class MelianConfig {
             properties.setProperty(propKey, defaultValue);
         }
     }
-    
+
     public String getProperty(String key) {
         return properties.getProperty(key);
     }
-    
+
     public String getProperty(String key, String defaultValue) {
         return properties.getProperty(key, defaultValue);
     }
-    
+
     public int getIntProperty(String key, int defaultValue) {
         String value = properties.getProperty(key);
         if (value == null) return defaultValue;
@@ -77,7 +68,7 @@ public class MelianConfig {
             return defaultValue;
         }
     }
-    
+
     public boolean getBooleanProperty(String key, boolean defaultValue) {
         String value = properties.getProperty(key);
         if (value == null) return defaultValue;

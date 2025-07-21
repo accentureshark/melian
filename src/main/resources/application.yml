@@ -7,19 +7,26 @@ spring:
       server:
         enabled: true
         stdio: true
+        tcp: true
         type: SYNC
         name: melian-movie-server
         version: 1.0.0
         resource-change-notification: true
         tool-change-notification: true
         prompt-change-notification: true
+        host: 0.0.0.0
+        port: 3001  # ✅ Puerto separado para MCP
 
   main:
-    web-application-type: none
+    web-application-type: servlet
     banner-mode: off
 
+  server:
+    port: 3000        # ✅ Puerto para Spring Boot web
+    address: 0.0.0.0
+
   datasource:
-    url: jdbc:mysql://localhost:3307/sakila
+    url: jdbc:mysql://mysql-sakila:3306/sakila
     username: sakila
     password: sakila
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -27,28 +34,21 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
   data:
     mongodb:
-      host: localhost
-      port: 27017
-      database: melian_movies
-      username: root
-      password: example
+      uri: mongodb://root:example@mongo:27017/melian_movies?authSource=admin
 
 tmdb:
   api-url: https://api.themoviedb.org/3
   access-token: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y"
 
 logging:
-  pattern:
-    console: ""
   level:
-    root: DEBUG
-    org.springframework: DEBUG
+    root: INFO
     org.shark.melian: DEBUG
-    org.springframework.context: DEBUG
+    org.mongodb.driver: WARN

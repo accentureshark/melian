@@ -17,25 +17,25 @@ import java.util.Map;
  * Stores movies in a SQL database and provides chunk-based access.
  */
 public class SqlMovieChunkServicePure implements MovieChunkService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(SqlMovieChunkServicePure.class);
-    
+
     private final DatabaseConfig databaseConfig;
     private final TMDBServicePure tmdbService;
-    
+
     public SqlMovieChunkServicePure(DatabaseConfig databaseConfig, TMDBServicePure tmdbService) {
         this.databaseConfig = databaseConfig;
         this.tmdbService = tmdbService;
         createMoviesTableIfNeeded();
     }
-    
+
     @Override
     public void storeMovies(List<MovieResult> movies, String source) {
         log.info("[SqlMovieChunkServicePure] Storing {} movies from source: {}", movies.size(), source);
-        
+
         String updateSql = "UPDATE movies SET overview = ?, rating = ? WHERE title = ? AND source = ?";
         String insertSql = "INSERT INTO movies (title, overview, release_date, rating, source) VALUES (?, ?, ?, ?, ?)";
-        
+
         try (Connection conn = databaseConfig.getConnection()) {
             for (MovieResult movie : movies) {
                 // First try to update existing record
@@ -44,9 +44,9 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
                     updateStmt.setDouble(2, movie.rating());
                     updateStmt.setString(3, movie.title());
                     updateStmt.setString(4, source);
-                    
+
                     int updated = updateStmt.executeUpdate();
-                    
+
                     // If no record was updated, insert new one
                     if (updated == 0) {
                         try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
@@ -64,26 +64,26 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
             log.error("[SqlMovieChunkServicePure] Error storing movies", e);
         }
     }
-    
+
     @Override
     public List<ChunkDto> getMovieChunks(String source, int limit, String afterId, String filter, List<String> tags, String sort) {
         log.info("[SqlMovieChunkServicePure] Getting movie chunks for source: {}", source);
-        
+
         StringBuilder sql = new StringBuilder("SELECT id, title, overview, release_date, rating, source FROM movies WHERE 1=1");
         List<Object> params = new ArrayList<>();
-        
+
         // Add source filter
         if (source != null && !source.isBlank()) {
             sql.append(" AND source = ?");
             params.add(source);
         }
-        
+
         // Add afterId pagination
         if (afterId != null && !afterId.isBlank()) {
             sql.append(" AND id > ?");
             params.add(Long.parseLong(afterId));
         }
-        
+
         // Add filter
         if (filter != null && !filter.isBlank()) {
             if (filter.toLowerCase().contains(" like ")) {
@@ -100,26 +100,26 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
                 params.add(val);
             }
         }
-        
+
         // Add sorting
         if (sort != null && !sort.isBlank()) {
             sql.append(" ORDER BY ").append(sort);
         } else {
             sql.append(" ORDER BY id");
         }
-        
+
         sql.append(" LIMIT ?");
         params.add(limit);
-        
+
         List<ChunkDto> chunks = new ArrayList<>();
         try (Connection conn = databaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-            
+
             // Set parameters
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
             }
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     chunks.add(mapRowToChunk(rs));
@@ -128,37 +128,37 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
         } catch (SQLException e) {
             log.error("[SqlMovieChunkServicePure] Error retrieving chunks", e);
         }
-        
+
         return chunks;
     }
-    
+
     @Override
     public List<MovieResult> searchAndStore(String title, int limit, boolean store) {
         log.info("[SqlMovieChunkServicePure] Searching for movies with title: {}, store: {}", title, store);
-        
+
         List<MovieResult> movies = tmdbService.search(title, limit);
-        
+
         if (store && !movies.isEmpty()) {
             storeMovies(movies, "tmdb");
         }
-        
+
         return movies;
     }
-    
+
     private void createMoviesTableIfNeeded() {
         String createTableSql = """
-            CREATE TABLE IF NOT EXISTS movies (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                overview TEXT,
-                release_date VARCHAR(50),
-                rating DECIMAL(3,1),
-                source VARCHAR(50),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT unique_title_source UNIQUE (title, source)
-            )
-            """;
-        
+                CREATE TABLE IF NOT EXISTS movies (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    title VARCHAR(255) NOT NULL,
+                    overview TEXT,
+                    release_date VARCHAR(50),
+                    rating DECIMAL(3,1),
+                    source VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT unique_title_source UNIQUE (title, source)
+                )
+                """;
+
         try (Connection conn = databaseConfig.getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(createTableSql);
@@ -166,19 +166,19 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
             log.warn("[SqlMovieChunkServicePure] Error creating movies table: {}", e.getMessage());
         }
     }
-    
+
     private ChunkDto mapRowToChunk(ResultSet rs) throws SQLException {
         ChunkDto chunk = new ChunkDto();
         chunk.setId(String.valueOf(rs.getLong("id")));
-        
+
         // Build text content for MCP compliance
-        String text = String.format("Movie: %s (%s)\nOverview: %s\nRating: %.1f", 
-                rs.getString("title"), 
-                rs.getString("release_date"), 
-                rs.getString("overview"), 
+        String text = String.format("Movie: %s (%s)\nOverview: %s\nRating: %.1f",
+                rs.getString("title"),
+                rs.getString("release_date"),
+                rs.getString("overview"),
                 rs.getDouble("rating"));
         chunk.setText(text);
-        
+
         // Build metadata
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("id", rs.getLong("id"));
@@ -188,10 +188,10 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
         metadata.put("rating", rs.getDouble("rating"));
         metadata.put("source", rs.getString("source"));
         chunk.setMetadata(metadata);
-        
+
         return chunk;
     }
-    
+
     private String cleanQuotes(String val) {
         val = val.trim();
         if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {

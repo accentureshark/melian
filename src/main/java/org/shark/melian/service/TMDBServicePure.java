@@ -16,7 +16,7 @@ import java.util.Map;
  * Provides movie search functionality using TMDB API.
  */
 public class TMDBServicePure {
-    
+
     private static final Logger log = LoggerFactory.getLogger(TMDBServicePure.class);
     private final TMDBApiClientPure tmdbApiClient;
 
@@ -31,7 +31,7 @@ public class TMDBServicePure {
 
     public List<MovieResult> searchByParams(Map<String, String> params, int limit) {
         log.info("[TMDBServicePure] Searching with params: {}", params);
-        
+
         TMDBResponse response = tmdbApiClient.searchMovies(params);
         if (response == null || response.results == null || response.results.isEmpty()) {
             log.info("[TMDBServicePure] No movie results found");
@@ -41,7 +41,7 @@ public class TMDBServicePure {
         log.info("[TMDBServicePure] Found {} movie(s)", response.results.size());
         List<MovieResult> results = new ArrayList<>();
         for (TMDBMovie movie : response.results) {
-            log.info("[TMDBServicePure] Movie: {} ({}) | Rating: {:.2f}", 
+            log.info("[TMDBServicePure] Movie: {} ({}) | Rating: {:.2f}",
                     movie.title, movie.release_date, movie.vote_average);
             results.add(new MovieResult(
                     movie.title,

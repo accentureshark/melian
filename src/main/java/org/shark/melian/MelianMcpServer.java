@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.Map;
 
 public class MelianMcpServer {
 
@@ -55,35 +54,53 @@ public class MelianMcpServer {
         McpSchema.Tool searchMoviesTool = new McpSchema.Tool(
                 "search_movies",
                 "Buscar películas usando TMDB API",
-                "Busca películas por título usando TMDB. Parámetros: query (string, requerido), limit (int, opcional, default 10, max 50)",
-                Map.of(
-                        "query", Map.of("type", "string", "description", "Término de búsqueda"),
-                        "limit", Map.of("type", "integer", "description", "Máximo de resultados")
-                ),
-                Map.of(
-                        "results", Map.of("type", "array", "description", "Lista de películas")
-                )
+                """
+                {
+                  "type": "object",
+                  "properties": {
+                    "query": { "type": "string", "description": "Título a buscar", "minLength": 1 },
+                    "limit": { "type": "integer", "description": "Cantidad máxima de resultados", "minimum": 1, "maximum": 50, "default": 10 }
+                  },
+                  "required": ["query"]
+                }
+                """
         );
         mcpTools.registerTool(searchMoviesTool, (exchange, args) -> {
             String query = (String) args.get("query");
             int limit = args.get("limit") != null ? ((Number) args.get("limit")).intValue() : 10;
             var results = tmdbService.search(query, limit);
-            return Map.of("results", results);
+            return java.util.Map.of("results", results);
         });
 
         // --- Definición y registro de get_movie_chunks ---
         McpSchema.Tool getMovieChunksTool = new McpSchema.Tool(
                 "get_movie_chunks",
                 "Obtener chunks de películas para RAG",
-                "Devuelve chunks de datos de películas. Parámetros: source (sql|mongo), limit (int), filter (string, opcional)",
-                Map.of(
-                        "source", Map.of("type", "string", "description", "Fuente: sql o mongo"),
-                        "limit", Map.of("type", "integer", "description", "Máximo de chunks"),
-                        "filter", Map.of("type", "string", "description", "Filtro opcional")
-                ),
-                Map.of(
-                        "chunks", Map.of("type", "array", "description", "Chunks de películas")
-                )
+                """
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "description": "Fuente de datos: sql o mongo",
+                      "enum": ["sql", "mongo"],
+                      "default": "sql"
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Cantidad máxima de chunks",
+                      "minimum": 1,
+                      "maximum": 100,
+                      "default": 10
+                    },
+                    "filter": {
+                      "type": "string",
+                      "description": "Filtro opcional para los chunks"
+                    }
+                  },
+                  "required": ["source", "limit"]
+                }
+                """
         );
         mcpTools.registerTool(getMovieChunksTool, (exchange, args) -> {
             String source = (String) args.getOrDefault("source", "sql");
@@ -91,22 +108,22 @@ public class MelianMcpServer {
             String filter = (String) args.getOrDefault("filter", null);
             var service = "mongo".equalsIgnoreCase(source) ? mongoMovieService : sqlMovieService;
             var chunks = service.getMovieChunks(source, limit, null, filter, null, null);
-            return Map.of("chunks", chunks);
+            return java.util.Map.of("chunks", chunks);
         });
 
         // --- Definición y registro de get_server_status ---
-        McpSchema.Tool getServerStatusTool = new McpSchema.Tool(
-                "get_server_status",
-                "Obtener estado del servidor",
-                "Devuelve informaci��n de estado y configuración del servidor.",
-                Map.of(),
-                Map.of(
-                        "status", Map.of("type", "string", "description", "Estado"),
-                        "timestamp", Map.of("type", "integer", "description", "Marca de tiempo")
-                )
-        );
+   McpSchema.Tool getServerStatusTool = new McpSchema.Tool(
+       "get_server_status",
+       "Obtener estado del servidor",
+       """
+       {
+         "type": "object",
+         "properties": {}
+       }
+       """
+   );
         mcpTools.registerTool(getServerStatusTool, (exchange, args) -> {
-            return Map.of(
+            return java.util.Map.of(
                     "status", "OK",
                     "timestamp", System.currentTimeMillis()
             );
@@ -118,7 +135,11 @@ public class MelianMcpServer {
     public static void main(String[] args) {
         MelianMcpServer server = new MelianMcpServer();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
-        server.start();
+        try {
+            server.startHttpServer();
+        } catch (IOException e) {
+            log.error("Error starting HTTP server", e);
+        }
     }
 
     private void startHttpServer() throws IOException {

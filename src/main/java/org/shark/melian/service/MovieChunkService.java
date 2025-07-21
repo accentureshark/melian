@@ -10,24 +10,24 @@ import java.util.List;
  * Allows storing and retrieving movie data as chunks in different storage backends.
  */
 public interface MovieChunkService {
-    
+
     /**
      * Store movie data as chunks for later retrieval
      */
     void storeMovies(List<MovieResult> movies, String source);
-    
+
     /**
      * Retrieve movie chunks from storage
      */
     List<ChunkDto> getMovieChunks(
-            String source, 
-            int limit, 
-            String afterId, 
-            String filter, 
-            List<String> tags, 
+            String source,
+            int limit,
+            String afterId,
+            String filter,
+            List<String> tags,
             String sort
     );
-    
+
     /**
      * Search movies by title and optionally store results
      */

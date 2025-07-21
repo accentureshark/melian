@@ -17,7 +17,8 @@ public class ChunkDto {
     private String source;         // opcional
     private List<String> tags;     // opcional
 
-    public ChunkDto() {}
+    public ChunkDto() {
+    }
 
     public ChunkDto(String id, String text, Map<String, Object> metadata) {
         this.id = id;
@@ -25,22 +26,52 @@ public class ChunkDto {
         this.metadata = metadata;
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId() {
+        return id;
+    }
 
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public Map<String, Object> getMetadata() { return metadata; }
-    public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
+    public String getText() {
+        return text;
+    }
 
-    public List<Float> getEmbedding() { return embedding; }
-    public void setEmbedding(List<Float> embedding) { this.embedding = embedding; }
+    public void setText(String text) {
+        this.text = text;
+    }
 
-    public String getSource() { return source; }
-    public void setSource(String source) { this.source = source; }
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
 
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public List<Float> getEmbedding() {
+        return embedding;
+    }
+
+    public void setEmbedding(List<Float> embedding) {
+        this.embedding = embedding;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 }
 

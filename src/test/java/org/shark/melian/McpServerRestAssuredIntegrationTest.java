@@ -1,10 +1,10 @@
-import com.sun.net.httpserver.HttpServer;
+// src/test/java/org/shark/melian/McpServerRestAssuredIntegrationTest.java
+package org.shark.melian;
+
 import io.restassured.RestAssured;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.shark.melian.MelianMcpServer;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -12,27 +12,10 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 public class McpServerRestAssuredIntegrationTest {
 
-    private static MelianMcpServer server;
-
     @BeforeAll
-    static void startServer() throws Exception {
-        server = new MelianMcpServer();
-        var startMethod = MelianMcpServer.class.getDeclaredMethod("startHttpServer");
-        startMethod.setAccessible(true);
-        startMethod.invoke(server);
+    static void setup() {
         RestAssured.baseURI = "http://localhost";
-        RestAssured.port = 3000;
-    }
-
-    @AfterAll
-    static void stopServer() {
-        if (server != null) {
-            server.shutdown();
-            HttpServer httpServer = server.getHttpServer();
-            if (httpServer != null) {
-                httpServer.stop(0);
-            }
-        }
+        RestAssured.port = 3000; // Puerto mapeado en docker-compose.yml
     }
 
     @Test
@@ -42,7 +25,8 @@ public class McpServerRestAssuredIntegrationTest {
         .then()
             .statusCode(200)
             .body("status", equalTo("OK"))
-            .body("tools", notNullValue());
+            .body("tools", notNullValue())
+            .body("resources", notNullValue());
     }
 
     @Test
@@ -56,7 +40,8 @@ public class McpServerRestAssuredIntegrationTest {
         .then()
             .statusCode(200)
             .body("result.serverInfo.name", equalTo("melian-movie-server"))
-            .body("result.capabilities.tools", notNullValue());
+            .body("result.capabilities.tools", notNullValue())
+            .body("result.capabilities.resources", notNullValue());
     }
 
     @Test
@@ -83,5 +68,31 @@ public class McpServerRestAssuredIntegrationTest {
         .then()
             .statusCode(200)
             .body("result.status", equalTo("OK"));
+    }
+
+    @Test
+    void resourcesListReturnsResources() {
+        String request = "{\"jsonrpc\":\"2.0\",\"method\":\"resources/list\",\"id\":4}";
+        given()
+            .body(request)
+            .header("Content-Type", "application/json")
+        .when()
+            .post("/mcp")
+        .then()
+            .statusCode(200)
+            .body("result.resources", notNullValue());
+    }
+
+    @Test
+    void resourcesReadReturnsErrorForInvalidUri() {
+        String request = "{\"jsonrpc\":\"2.0\",\"method\":\"resources/read\",\"params\":{\"uri\":\"invalid-resource\"},\"id\":5}";
+        given()
+            .body(request)
+            .header("Content-Type", "application/json")
+        .when()
+            .post("/mcp")
+        .then()
+            .statusCode(200)
+            .body("error.code", equalTo(-32603));
     }
 }

@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 public class McpHttpServer {
-    public static void start(McpHttpController controller, int port) throws IOException {
+    public static HttpServer start(McpHttpController controller, int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/mcp", new HttpHandler() {
             @Override
@@ -46,5 +46,6 @@ public class McpHttpServer {
         server.setExecutor(null);
         server.start();
         System.out.println("HTTP MCP server listening on port " + port);
+        return server;
     }
 }

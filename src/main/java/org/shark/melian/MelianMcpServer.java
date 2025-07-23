@@ -36,6 +36,7 @@ public class MelianMcpServer {
     private final MovieChunkService mongoMovieService;
     private final MelianMcpTools mcpTools;
     private final MelianMcpResources mcpResources;
+    private HttpServer httpServer;
 
     public MelianMcpServer() {
         log.info("Initializing MELIAN MCP Server...");
@@ -148,7 +149,8 @@ public class MelianMcpServer {
 
         McpHttpController httpController = new McpHttpController(mcpTools, mcpResources);
 
-        HttpServer server = HttpServer.create(new InetSocketAddress(host, port), 0);
+        httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
+        HttpServer server = httpServer;
 
         server.createContext("/mcp", new HttpHandler() {
             @Override
@@ -202,10 +204,17 @@ public class MelianMcpServer {
             if (mongoConfig != null) {
                 mongoConfig.close();
             }
+            if (httpServer != null) {
+                httpServer.stop(0);
+            }
         } catch (Exception e) {
             log.warn("Error during shutdown", e);
         }
 
         log.info("MELIAN MCP Server shutdown complete");
+    }
+
+    public HttpServer getHttpServer() {
+        return httpServer;
     }
 }

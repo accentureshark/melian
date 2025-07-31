@@ -35,7 +35,8 @@ public class MelianConfig {
 
         // TMDB API configuration
         setPropertyFromEnv("tmdb.api-url", "TMDB_API_URL", "https://api.themoviedb.org/3");
-        setPropertyFromEnv("tmdb.access-token", "TMDB_ACCESS_TOKEN", "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y");
+        // Token sin valor por defecto; debe proveerse via variable de entorno
+        setPropertyFromEnv("tmdb.access-token", "TMDB_ACCESS_TOKEN", null);
 
         // MCP Server configuration - usar 0.0.0.0 para Docker
         setPropertyFromEnv("mcp.server.port", "MCP_SERVER_PORT", "3000");
@@ -46,7 +47,7 @@ public class MelianConfig {
         String envValue = System.getenv(envKey);
         if (envValue != null && !envValue.trim().isEmpty()) {
             properties.setProperty(propKey, envValue);
-        } else if (!properties.containsKey(propKey)) {
+        } else if (defaultValue != null && !properties.containsKey(propKey)) {
             properties.setProperty(propKey, defaultValue);
         }
     }

@@ -297,16 +297,32 @@ public class MelianMcpResources implements ResourceService {
 
     @Override
     public List<String> listResources() {
-        return List.of();
+        return List.of(
+                movieMetadataResourceDef().name(),
+                movieChunksResourceDef().name(),
+                serverDocsResourceDef().name()
+        );
     }
 
     @Override
     public Map<String, Object> capabilities() {
-        return Map.of();
+        return Map.of(
+                movieMetadataResourceDef().name(), movieMetadataResourceDef().description(),
+                movieChunksResourceDef().name(), movieChunksResourceDef().description(),
+                serverDocsResourceDef().name(), serverDocsResourceDef().description()
+        );
     }
 
     @Override
     public Object readResource(String uri) {
-        return null;
+        if (uri == null) return null;
+        String base = uri.contains("?") ? uri.substring(0, uri.indexOf('?')) : uri;
+        McpSchema.ReadResourceRequest req = new McpSchema.ReadResourceRequest(uri);
+        return switch (base) {
+            case "movies/metadata" -> readMovieMetadata(null, req);
+            case "movies/chunks" -> readMovieChunks(null, req);
+            case "server/docs" -> readServerDocs(null, req);
+            default -> null;
+        };
     }
 }

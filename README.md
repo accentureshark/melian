@@ -67,7 +67,7 @@ Además, MELIAN permite elegir la fuente de datos (`source=sql` o `source=rest`)
 
 ## Arquitectura Refactorizada (Sin Spring Boot)
 
-MELIAN ahora utiliza el **SDK oficial de MCP de Java** (`io.modelcontextprotocol.sdk:mcp:0.10.0`) en lugar de Spring Boot, proporcionando:
+MELIAN ahora utiliza el **SDK oficial de MCP de Java** (`io.modelcontextprotocol.sdk:mcp:0.10.0`) en lugar de Spring Boot, ejecutando un servidor `McpSyncServer` puro. Esto proporciona:
 
 - ✅ **MCP Compliance Nativo**: Implementación directa del protocolo MCP sin abstracciones adicionales
 - ✅ **Menor Overhead**: Sin dependencias de Spring Boot ni framework web

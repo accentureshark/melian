@@ -1,14 +1,14 @@
 package org.shark.melian;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.server.McpSyncServerBuilder;
+import io.modelcontextprotocol.server.transport.McpSyncServerTransport;
+import io.modelcontextprotocol.server.transport.stdio.StdioTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.shark.melian.client.TMDBApiClientPure;
 import org.shark.melian.config.DatabaseConfig;
 import org.shark.melian.config.MelianConfig;
 import org.shark.melian.config.MongoConfig;
-import org.shark.melian.controller.McpHttpController;
 import org.shark.melian.mcp.MelianMcpResources;
 import org.shark.melian.mcp.MelianMcpTools;
 import org.shark.melian.service.MongoMovieChunkServicePure;
@@ -19,9 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
 
 public class MelianMcpServer {
 
@@ -36,7 +33,7 @@ public class MelianMcpServer {
     private final MovieChunkService mongoMovieService;
     private final MelianMcpTools mcpTools;
     private final MelianMcpResources mcpResources;
-    private HttpServer httpServer;
+    private McpSyncServer mcpServer;
 
     public MelianMcpServer() {
         log.info("Initializing MELIAN MCP Server...");
@@ -131,64 +128,34 @@ public class MelianMcpServer {
         });
 
         log.info("MELIAN MCP Server initialized successfully");
+        this.mcpServer = buildMcpServer();
+    }
+
+    private McpSyncServer buildMcpServer() {
+        McpSyncServerBuilder builder = McpSyncServer.builder();
+        for (var tool : mcpTools.getAllToolDefinitions()) {
+            builder.addTool(tool, (ex, args) -> mcpTools.callTool(tool.name(), args));
+        }
+        builder.addResource(MelianMcpResources.movieMetadataResourceDef(), mcpResources::readMovieMetadata);
+        builder.addResource(MelianMcpResources.movieChunksResourceDef(), mcpResources::readMovieChunks);
+        builder.addResource(MelianMcpResources.serverDocsResourceDef(), mcpResources::readServerDocs);
+        return builder.build();
     }
 
     public static void main(String[] args) {
         MelianMcpServer server = new MelianMcpServer();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
         try {
-            server.startHttpServer();
+            server.startStdioServer();
         } catch (IOException e) {
-            log.error("Error starting HTTP server", e);
+            log.error("Error starting MCP server", e);
         }
     }
 
-    private void startHttpServer() throws IOException {
-        int port = config.getIntProperty("mcp.server.port", 3000);
-        String host = config.getProperty("mcp.server.host", "0.0.0.0");
-
-        McpHttpController httpController = new McpHttpController(mcpTools, mcpResources);
-
-        httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
-        HttpServer server = httpServer;
-
-        server.createContext("/mcp", new HttpHandler() {
-            @Override
-            public void handle(HttpExchange exchange) throws IOException {
-                if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                    InputStream is = exchange.getRequestBody();
-                    String request = new String(is.readAllBytes());
-                    String response = httpController.handleMcpRequest(request);
-                    exchange.getResponseHeaders().add("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, response.getBytes().length);
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(response.getBytes());
-                    os.close();
-                } else {
-                    exchange.sendResponseHeaders(405, -1);
-                }
-            }
-        });
-
-        server.createContext("/mcp/health", new HttpHandler() {
-            @Override
-            public void handle(HttpExchange exchange) throws IOException {
-                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-                    String response = httpController.health();
-                    exchange.getResponseHeaders().add("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, response.getBytes().length);
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(response.getBytes());
-                    os.close();
-                } else {
-                    exchange.sendResponseHeaders(405, -1);
-                }
-            }
-        });
-
-        server.setExecutor(null);
-        server.start();
-        log.info("HTTP MCP server listening on {}:{}", host, port);
+    private void startStdioServer() throws IOException {
+        McpSyncServerTransport transport = new StdioTransport();
+        mcpServer.start(transport);
+        log.info("MCP server started on STDIO transport");
     }
 
     public void shutdown() {
@@ -204,8 +171,8 @@ public class MelianMcpServer {
             if (mongoConfig != null) {
                 mongoConfig.close();
             }
-            if (httpServer != null) {
-                httpServer.stop(0);
+            if (mcpServer != null) {
+                mcpServer.stop();
             }
         } catch (Exception e) {
             log.warn("Error during shutdown", e);
@@ -214,7 +181,7 @@ public class MelianMcpServer {
         log.info("MELIAN MCP Server shutdown complete");
     }
 
-    public HttpServer getHttpServer() {
-        return httpServer;
+    public McpSyncServer getMcpServer() {
+        return mcpServer;
     }
 }

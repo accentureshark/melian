@@ -206,6 +206,14 @@ export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
+#### 6. Modo HTTP SSE (servidor remoto)
+```bash
+export MCP_SERVER_HTTP_ENABLED=true
+# Puerto opcional
+export MCP_SERVER_PORT=3000
+java -jar target/melian-0.1.0-SNAPSHOT.jar
+```
+
 ### ✅ Verificación del servidor
 
 Cuando el servidor esté corriendo verás:

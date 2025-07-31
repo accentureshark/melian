@@ -41,6 +41,7 @@ public class MelianConfig {
         // MCP Server configuration - usar 0.0.0.0 para Docker
         setPropertyFromEnv("mcp.server.port", "MCP_SERVER_PORT", "3000");
         setPropertyFromEnv("mcp.server.host", "MCP_SERVER_HOST", "0.0.0.0");
+        setPropertyFromEnv("mcp.server.http.enabled", "MCP_SERVER_HTTP_ENABLED", "false");
     }
 
     private void setPropertyFromEnv(String propKey, String envKey, String defaultValue) {

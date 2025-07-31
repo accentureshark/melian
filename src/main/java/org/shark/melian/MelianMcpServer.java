@@ -3,6 +3,7 @@ package org.shark.melian;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.McpSyncServerBuilder;
 import io.modelcontextprotocol.server.transport.McpSyncServerTransport;
+import io.modelcontextprotocol.server.transport.http.servlet.HttpServletSseServerTransportProvider;
 import io.modelcontextprotocol.server.transport.stdio.StdioTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.shark.melian.client.TMDBApiClientPure;
@@ -18,7 +19,13 @@ import org.shark.melian.service.TMDBServicePure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 public class MelianMcpServer {
 
@@ -27,6 +34,7 @@ public class MelianMcpServer {
     private final MelianConfig config;
     private final DatabaseConfig databaseConfig;
     private final MongoConfig mongoConfig;
+    private Server httpServer;
     private final TMDBApiClientPure tmdbClient;
     private final TMDBServicePure tmdbService;
     private final MovieChunkService sqlMovieService;
@@ -146,8 +154,12 @@ public class MelianMcpServer {
         MelianMcpServer server = new MelianMcpServer();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
         try {
-            server.startStdioServer();
-        } catch (IOException e) {
+            if (server.getConfig().getBooleanProperty("mcp.server.http.enabled", false)) {
+                server.startHttpServer();
+            } else {
+                server.startStdioServer();
+            }
+        } catch (Exception e) {
             log.error("Error starting MCP server", e);
         }
     }
@@ -156,6 +168,26 @@ public class MelianMcpServer {
         McpSyncServerTransport transport = new StdioTransport();
         mcpServer.start(transport);
         log.info("MCP server started on STDIO transport");
+    }
+
+    private void startHttpServer() throws Exception {
+        int port = config.getIntProperty("mcp.server.port", 3000);
+        String host = config.getProperty("mcp.server.host", "0.0.0.0");
+
+        ObjectMapper mapper = new ObjectMapper();
+        HttpServletSseServerTransportProvider transport =
+                new HttpServletSseServerTransportProvider(mapper, "/mcp/message");
+
+        httpServer = new Server(new InetSocketAddress(host, port));
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        context.addServlet(new ServletHolder(transport), "/mcp/message");
+        httpServer.setHandler(context);
+
+        mcpServer.start(transport);
+        httpServer.start();
+        log.info("MCP server started on HTTP SSE transport at {}:{}", host, port);
+        httpServer.join();
     }
 
     public void shutdown() {
@@ -174,6 +206,9 @@ public class MelianMcpServer {
             if (mcpServer != null) {
                 mcpServer.stop();
             }
+            if (httpServer != null) {
+                httpServer.stop();
+            }
         } catch (Exception e) {
             log.warn("Error during shutdown", e);
         }
@@ -183,5 +218,9 @@ public class MelianMcpServer {
 
     public McpSyncServer getMcpServer() {
         return mcpServer;
+    }
+
+    public MelianConfig getConfig() {
+        return config;
     }
 }

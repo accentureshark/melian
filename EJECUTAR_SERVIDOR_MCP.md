@@ -139,6 +139,23 @@ export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
+## 🌐 Modo HTTP SSE (servidor remoto)
+
+Para exponer el servidor por HTTP usando Server-Sent Events (SSE), establece la variable:
+
+```bash
+export MCP_SERVER_HTTP_ENABLED=true
+```
+
+Opcionalmente puedes configurar el puerto y host:
+
+```bash
+export MCP_SERVER_PORT=3000
+export MCP_SERVER_HOST=0.0.0.0
+```
+
+Luego ejecuta el servidor normalmente y atenderá conexiones remotas en `http://$MCP_SERVER_HOST:$MCP_SERVER_PORT/mcp/message`.
+
 ## 🔧 Obtener Token TMDB
 
 1. Ir a [https://www.themoviedb.org/](https://www.themoviedb.org/)

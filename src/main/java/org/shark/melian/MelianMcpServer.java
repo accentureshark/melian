@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.shark.melian.rest.SearchMoviesServlet;
+import org.shark.melian.rest.MovieChunksServlet;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -182,6 +184,8 @@ public class MelianMcpServer {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         context.addServlet(new ServletHolder(transport), "/mcp/message");
+        context.addServlet(new ServletHolder(new SearchMoviesServlet(tmdbService)), "/api/search");
+        context.addServlet(new ServletHolder(new MovieChunksServlet(sqlMovieService, mongoMovieService)), "/api/chunks");
         httpServer.setHandler(context);
 
         mcpServer.start(transport);

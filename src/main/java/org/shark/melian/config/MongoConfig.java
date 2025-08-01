@@ -18,6 +18,13 @@ public class MongoConfig {
         String uri = config.getProperty("mongodb.uri");
         String databaseName = config.getProperty("mongodb.database");
 
+        if (uri == null || uri.trim().isEmpty()) {
+            // MongoDB is optional - skip initialization
+            this.mongoClient = null;
+            this.database = null;
+            return;
+        }
+
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(new com.mongodb.ConnectionString(uri))
                 .build();

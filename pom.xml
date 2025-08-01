@@ -174,6 +174,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.8.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>5.4.0</version>
@@ -224,7 +230,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.shark.melian.MelianAiAssistant</mainClass>
+                            <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -242,7 +248,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.shark.melian.MelianAiAssistant</mainClass>
+                                    <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

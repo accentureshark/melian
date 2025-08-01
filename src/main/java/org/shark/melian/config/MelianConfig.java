@@ -23,14 +23,14 @@ public class MelianConfig {
     }
 
     private void loadFromEnvironment() {
-        // Database configuration - MySQL (eliminar H2)
-        setPropertyFromEnv("db.url", "DB_URL", "jdbc:mysql://mysql-sakila:3306/sakila");
-        setPropertyFromEnv("db.username", "DB_USERNAME", "sakila");
-        setPropertyFromEnv("db.password", "DB_PASSWORD", "sakila");
-        setPropertyFromEnv("db.driver", "DB_DRIVER", "com.mysql.cj.jdbc.Driver");
+        // Database configuration - H2 by default for testing
+        setPropertyFromEnv("db.url", "DB_URL", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        setPropertyFromEnv("db.username", "DB_USERNAME", "sa");
+        setPropertyFromEnv("db.password", "DB_PASSWORD", "");
+        setPropertyFromEnv("db.driver", "DB_DRIVER", "org.h2.Driver");
 
-        // MongoDB configuration - usar servicio Docker
-        setPropertyFromEnv("mongodb.uri", "MONGODB_URI", "mongodb://root:example@mongo:27017/melian_movies?authSource=admin");
+        // MongoDB configuration - optional
+        setPropertyFromEnv("mongodb.uri", "MONGODB_URI", null);
         setPropertyFromEnv("mongodb.database", "MONGODB_DATABASE", "melian_movies");
 
         // TMDB API configuration

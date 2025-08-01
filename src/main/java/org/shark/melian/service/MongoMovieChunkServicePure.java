@@ -30,12 +30,23 @@ public class MongoMovieChunkServicePure implements MovieChunkService {
     private final TMDBServicePure tmdbService;
 
     public MongoMovieChunkServicePure(MongoConfig mongoConfig, TMDBServicePure tmdbService) {
-        this.moviesCollection = mongoConfig.getDatabase().getCollection(MOVIES_COLLECTION);
         this.tmdbService = tmdbService;
+        if (mongoConfig == null || mongoConfig.getDatabase() == null) {
+            log.warn("MongoDB not configured - MongoMovieChunkService will be disabled");
+            this.moviesCollection = null;
+        } else {
+            this.moviesCollection = mongoConfig.getDatabase().getCollection(MOVIES_COLLECTION);
+            log.info("MongoMovieChunkServicePure initialized with MongoDB");
+        }
     }
 
     @Override
     public void storeMovies(List<MovieResult> movies, String source) {
+        if (moviesCollection == null) {
+            log.warn("MongoDB not available - cannot store movies");
+            return;
+        }
+        
         log.info("[MongoMovieChunkServicePure] Storing {} movies from source: {}", movies.size(), source);
 
         for (MovieResult movie : movies) {
@@ -52,6 +63,11 @@ public class MongoMovieChunkServicePure implements MovieChunkService {
 
     @Override
     public List<ChunkDto> getMovieChunks(String source, int limit, String afterId, String filter, List<String> tags, String sort) {
+        if (moviesCollection == null) {
+            log.warn("MongoDB not available - returning empty chunks list");
+            return List.of();
+        }
+        
         log.info("[MongoMovieChunkServicePure] Getting movie chunks for source: {}", source);
 
         Document query = new Document();

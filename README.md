@@ -140,9 +140,88 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 
 ---
 
-## 🚀 ¿Cómo ejecutar el Asistente de IA MELIAN?
+## 🚀 ¿Cómo ejecutar el Servidor MCP MELIAN?
 
-### Opción 1: Script Automático (Recomendado)
+### Opción 1: Servidor MCP Puro (Recomendado para MCP compliance)
+
+MELIAN ahora incluye un servidor MCP puro que cumple completamente con el estándar MCP sin dependencias de OpenAI.
+
+```bash
+# Compilar el proyecto
+mvn clean package -DskipTests
+
+# Ejecutar servidor MCP con transporte HTTP
+MCP_SERVER_HTTP_ENABLED=true java -jar target/melian-*.jar
+
+# Ejecutar servidor MCP con transporte Stdio (por defecto)
+java -jar target/melian-*.jar
+
+# Ejecutar con ambos transportes
+MCP_SERVER_HTTP_ENABLED=true MCP_SERVER_STDIO_ENABLED=true java -jar target/melian-*.jar
+```
+
+#### Variables de Entorno para MCP Server:
+
+```bash
+# Configuración de transporte
+export MCP_SERVER_HTTP_ENABLED=true    # Habilitar transporte HTTP
+export MCP_SERVER_STDIO_ENABLED=true   # Habilitar transporte Stdio
+export MCP_SERVER_HOST=0.0.0.0         # Host del servidor HTTP
+export MCP_SERVER_PORT=3000             # Puerto del servidor HTTP
+
+# Configuración de bases de datos (opcional)
+export DB_URL="jdbc:mysql://localhost:3307/sakila"
+export DB_USERNAME="sakila"
+export DB_PASSWORD="sakila"
+export MONGODB_URI="mongodb://root:example@localhost:27017/melian_movies"
+
+# Configuración de TMDB/IMDB
+export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
+
+# Modo puro MCP (sin OpenAI)
+export MCP_PURE_MODE=true
+export DISABLE_OPENAI=true
+```
+
+#### Endpoints MCP Estándar:
+
+- **JSON-RPC**: `POST /mcp` - Endpoint principal MCP con métodos estándar
+- **Health**: `GET /mcp/health` - Estado del servidor
+- **Tools**: `GET /mcp/tools` - Lista de herramientas disponibles
+- **Resources**: `GET /mcp/resources` - Lista de recursos disponibles
+
+#### Métodos MCP Soportados:
+
+1. **initialize** - Inicializar conexión MCP
+2. **tools/list** - Listar herramientas disponibles
+3. **tools/call** - Ejecutar herramienta específica
+4. **resources/list** - Listar recursos disponibles
+5. **resources/read** - Leer contenido de recurso específico
+
+#### Herramientas MCP Disponibles:
+
+- `search_movies` - Buscar películas usando TMDB API
+- `get_movie_chunks` - Obtener chunks de datos de películas para RAG
+- `get_server_status` - Obtener estado del servidor
+
+### Opción 2: Con Docker Compose (Recomendado para desarrollo)
+
+```bash
+# Levantar todo el stack (MySQL, MongoDB, MCP Server)
+docker-compose up -d
+
+# Ver logs del servidor MCP
+docker-compose logs -f melian-mcp-server
+
+# Probar el servidor
+./test-mcp-server.sh
+```
+
+### Opción 3: Asistente de IA MELIAN (Legacy)
+
+Para compatibilidad hacia atrás, el asistente de IA original sigue disponible:
+
+### Opción 3: Script Automático (Legacy - AI Assistant)
 
 ```bash
 # Hacer el script ejecutable (solo la primera vez)
@@ -161,7 +240,7 @@ El script te guiará paso a paso para:
 - ✅ Configurar OpenAI API Key (opcional)
 - ✅ Ejecutar el asistente
 
-### Opción 2: Ejecución Manual
+### Opción 4: Ejecución Manual (Legacy - AI Assistant)
 
 #### 1. Requisitos previos:
 - **Java 17+** (`java --version`)

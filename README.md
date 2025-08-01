@@ -237,6 +237,7 @@ El servidor proporciona:
   - `server/docs`: Documentación del servidor y guía de uso
 - 🗄️ **Múltiples fuentes**: SQL (H2/MySQL), MongoDB, TMDB API
 - 🚀 **Protocolo estándar**: Compatible con cualquier cliente MCP
+- 🌐 **Servicios REST**: `/api/search` y `/api/chunks` para integración ligera
 
 ---
 

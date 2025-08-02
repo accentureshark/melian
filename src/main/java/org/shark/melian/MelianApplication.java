@@ -8,6 +8,7 @@ import org.shark.melian.mcp.PureMcpServer;
 import org.shark.melian.service.MongoMovieChunkServicePure;
 import org.shark.melian.service.SqlMovieChunkServicePure;
 import org.shark.melian.service.TMDBServicePure;
+import org.shark.melian.service.AggregatedMovieService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -57,6 +58,13 @@ public class MelianApplication {
     public MongoMovieChunkServicePure mongoMovieChunkServicePure(MongoConfig mongoConfig,
                                                                  TMDBServicePure tmdbService) {
         return new MongoMovieChunkServicePure(mongoConfig, tmdbService);
+    }
+
+    @Bean
+    public AggregatedMovieService aggregatedMovieService(TMDBServicePure tmdbService,
+                                                         SqlMovieChunkServicePure sqlService,
+                                                         MongoMovieChunkServicePure mongoService) {
+        return new AggregatedMovieService(tmdbService, sqlService, mongoService);
     }
 
     @Bean

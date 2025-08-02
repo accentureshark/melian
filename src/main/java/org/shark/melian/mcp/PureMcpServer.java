@@ -3,6 +3,7 @@ package org.shark.melian.mcp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.shark.melian.service.TMDBServicePure;
 import org.shark.melian.service.MovieChunkService;
+import org.shark.melian.service.AggregatedMovieService;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.model.ChunkDto;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import java.util.*;
 /**
  * Pure MCP Server implementation following the Model Context Protocol specification.
  * Provides movie search and data access capabilities without OpenAI dependencies.
+ * Now uses AggregatedMovieService for parallel data fetching from all sources.
  */
 public class PureMcpServer {
 
@@ -22,13 +24,15 @@ public class PureMcpServer {
     private final TMDBServicePure tmdbService;
     private final MovieChunkService sqlService;
     private final MovieChunkService mongoService;
+    private final AggregatedMovieService aggregatedMovieService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     public PureMcpServer(TMDBServicePure tmdbService, MovieChunkService sqlService, MovieChunkService mongoService) {
         this.tmdbService = tmdbService;
         this.sqlService = sqlService;
         this.mongoService = mongoService;
-        log.info("Pure MCP Server initialized");
+        this.aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, mongoService);
+        log.info("Pure MCP Server initialized with aggregated movie service");
     }
 
     /**
@@ -68,12 +72,12 @@ public class PureMcpServer {
         List<McpDto.Tool> tools = Arrays.asList(
                 McpDto.Tool.builder()
                         .name("search_movies")
-                        .description("Search for movies using TMDB API")
+                        .description("Search for movies using TMDB API and store in all available databases")
                         .inputSchema(createSearchMoviesSchema())
                         .build(),
                 McpDto.Tool.builder()
                         .name("get_movie_chunks")
-                        .description("Get movie data chunks for RAG applications")
+                        .description("Get movie data chunks from ALL sources (SQL, MongoDB, TMDB) in parallel for RAG applications")
                         .inputSchema(createGetChunksSchema())
                         .build(),
                 McpDto.Tool.builder()
@@ -131,6 +135,12 @@ public class PureMcpServer {
 
         List<McpDto.Resource> resources = Arrays.asList(
                 McpDto.Resource.builder()
+                        .uri("melian://movies/aggregated")
+                        .name("Aggregated Movie Data")
+                        .description("Movie data from ALL sources (SQL, MongoDB, TMDB) combined")
+                        .mimeType("application/json")
+                        .build(),
+                McpDto.Resource.builder()
                         .uri("melian://movies/sql")
                         .name("SQL Movie Database")
                         .description("Movie data from MySQL Sakila database")
@@ -167,7 +177,36 @@ public class PureMcpServer {
 
             if (uri.startsWith("melian://movies/")) {
                 String source = uri.substring("melian://movies/".length());
-                List<ChunkDto> chunks = getMovieChunks(source, 20, null);
+                List<ChunkDto> chunks;
+                
+                if ("aggregated".equals(source)) {
+                    // Get chunks from all sources aggregated
+                    chunks = aggregatedMovieService.getMovieChunks(20, null, null, null, null);
+                } else if ("tmdb".equals(source)) {
+                    // Get chunks from TMDB by searching for popular recent movies
+                    List<MovieResult> movies = tmdbService.search("2024", 20);
+                    chunks = movies.stream()
+                            .map(movie -> {
+                                ChunkDto chunk = new ChunkDto();
+                                chunk.setId("tmdb_" + movie.title().hashCode());
+                                chunk.setText(String.format("Movie: %s (%s)\nOverview: %s\nRating: %.1f",
+                                        movie.title(), movie.releaseDate(), movie.overview(), movie.rating()));
+                                Map<String, Object> metadata = new HashMap<>();
+                                metadata.put("title", movie.title());
+                                metadata.put("overview", movie.overview());
+                                metadata.put("release_date", movie.releaseDate());
+                                metadata.put("rating", movie.rating());
+                                metadata.put("source", "tmdb");
+                                chunk.setMetadata(metadata);
+                                return chunk;
+                            })
+                            .collect(java.util.stream.Collectors.toList());
+                } else {
+                    // Get chunks from specific source (legacy support)
+                    MovieChunkService service = "mongo".equalsIgnoreCase(source) ? mongoService : sqlService;
+                    chunks = service.getMovieChunks(source, 20, null, null, null, null);
+                }
+                
                 content = objectMapper.writeValueAsString(chunks);
             } else {
                 throw new IllegalArgumentException("Unknown resource URI: " + uri);
@@ -191,11 +230,14 @@ public class PureMcpServer {
      */
     public McpDto.HealthStatus getHealth() {
         Map<String, Object> details = new HashMap<>();
-        details.put("tmdbService", tmdbService != null ? "OK" : "NOT_AVAILABLE");
-        details.put("sqlService", sqlService != null ? "OK" : "NOT_AVAILABLE");
-        details.put("mongoService", mongoService != null ? "OK" : "NOT_AVAILABLE");
+        
+        // Get status from aggregated service
+        Map<String, String> servicesStatus = aggregatedMovieService.getServicesStatus();
+        details.putAll(servicesStatus);
+        
         details.put("tools", Arrays.asList("search_movies", "get_movie_chunks", "get_server_status"));
-        details.put("resources", Arrays.asList("melian://movies/sql", "melian://movies/mongo", "melian://movies/tmdb"));
+        details.put("resources", Arrays.asList("melian://movies/aggregated", "melian://movies/sql", "melian://movies/mongo", "melian://movies/tmdb"));
+        details.put("aggregated_service", "ENABLED");
 
         return McpDto.HealthStatus.builder()
                 .status("OK")
@@ -220,14 +262,14 @@ public class PureMcpServer {
                     .build();
         }
 
-        List<MovieResult> results = tmdbService.search(query, limit);
+        List<MovieResult> results = aggregatedMovieService.searchMovies(query, limit);
         try {
             String jsonResults = objectMapper.writeValueAsString(results);
             return McpDto.CallToolResult.builder()
                     .isError(false)
                     .content(List.of(McpDto.ToolContent.builder()
                             .type("text")
-                            .text("Found " + results.size() + " movies for query: " + query)
+                            .text("Found " + results.size() + " movies for query: " + query + " (automatically stored in all available databases)")
                             .data(results)
                             .build()))
                     .build();
@@ -237,18 +279,19 @@ public class PureMcpServer {
     }
 
     private McpDto.CallToolResult handleGetMovieChunks(Map<String, Object> args) {
-        String source = args.containsKey("source") ? (String) args.get("source") : "sql";
         Integer limit = args.containsKey("limit") ? (Integer) args.get("limit") : 10;
         String filter = (String) args.get("filter");
+        String afterId = (String) args.get("afterId");
+        String sort = (String) args.get("sort");
 
-        List<ChunkDto> chunks = getMovieChunks(source, limit, filter);
+        List<ChunkDto> chunks = aggregatedMovieService.getMovieChunks(limit, afterId, filter, null, sort);
         
         try {
             return McpDto.CallToolResult.builder()
                     .isError(false)
                     .content(List.of(McpDto.ToolContent.builder()
                             .type("text")
-                            .text("Retrieved " + chunks.size() + " chunks from " + source + " source")
+                            .text("Retrieved " + chunks.size() + " chunks from ALL sources (SQL, MongoDB, TMDB) in parallel")
                             .data(chunks)
                             .build()))
                     .build();
@@ -272,11 +315,6 @@ public class PureMcpServer {
         } catch (Exception e) {
             throw new RuntimeException("Failed to get server status", e);
         }
-    }
-
-    private List<ChunkDto> getMovieChunks(String source, int limit, String filter) {
-        MovieChunkService service = "mongo".equalsIgnoreCase(source) ? mongoService : sqlService;
-        return service.getMovieChunks(source, limit, null, filter, null, null);
     }
 
     // Schema creation methods
@@ -310,23 +348,26 @@ public class PureMcpServer {
         
         Map<String, Object> properties = new HashMap<>();
         
-        Map<String, Object> sourceProp = new HashMap<>();
-        sourceProp.put("type", "string");
-        sourceProp.put("description", "Data source (sql, mongo)");
-        sourceProp.put("enum", Arrays.asList("sql", "mongo"));
-        sourceProp.put("default", "sql");
-        properties.put("source", sourceProp);
-        
         Map<String, Object> limitProp = new HashMap<>();
         limitProp.put("type", "integer");
-        limitProp.put("description", "Maximum number of chunks");
+        limitProp.put("description", "Maximum number of chunks to retrieve from ALL sources");
         limitProp.put("default", 10);
         properties.put("limit", limitProp);
         
         Map<String, Object> filterProp = new HashMap<>();
         filterProp.put("type", "string");
-        filterProp.put("description", "Optional filter for chunks");
+        filterProp.put("description", "Optional filter for chunks (applied to all sources)");
         properties.put("filter", filterProp);
+        
+        Map<String, Object> afterIdProp = new HashMap<>();
+        afterIdProp.put("type", "string");
+        afterIdProp.put("description", "Pagination: get chunks after this ID");
+        properties.put("afterId", afterIdProp);
+        
+        Map<String, Object> sortProp = new HashMap<>();
+        sortProp.put("type", "string");
+        sortProp.put("description", "Sort field for results");
+        properties.put("sort", sortProp);
         
         schema.put("properties", properties);
         

@@ -145,6 +145,31 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
         return movies;
     }
 
+    @Override
+    public List<MovieResult> search(String query, int limit) {
+        log.info("[SqlMovieChunkServicePure] Searching local DB for movies with title LIKE: {} (limit: {})", query, limit);
+        List<MovieResult> results = new ArrayList<>();
+        String sql = "SELECT title, overview, release_date, rating FROM movies WHERE LOWER(title) LIKE ? ORDER BY id LIMIT ?";
+        try (Connection conn = databaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "%" + query.toLowerCase() + "%");
+            stmt.setInt(2, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(new MovieResult(
+                        rs.getString("title"),
+                        rs.getString("overview"),
+                        rs.getString("release_date"),
+                        rs.getDouble("rating")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            log.error("[SqlMovieChunkServicePure] Error searching local DB", e);
+        }
+        return results;
+    }
+
     private void createMoviesTableIfNeeded() {
         String createTableSql = """
                 CREATE TABLE IF NOT EXISTS movies (

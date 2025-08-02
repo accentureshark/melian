@@ -151,6 +151,31 @@ public class MongoMovieChunkServicePure implements MovieChunkService {
         return movies;
     }
 
+    @Override
+    public List<MovieResult> search(String query, int limit) {
+        log.info("[MongoMovieChunkServicePure] Searching local MongoDB for movies with title LIKE: {} (limit: {})", query, limit);
+        List<MovieResult> results = new ArrayList<>();
+        if (moviesCollection == null) {
+            log.warn("MongoDB not available - cannot search movies");
+            return results;
+        }
+        Document mongoQuery = new Document("title", new Document("$regex", query).append("$options", "i"));
+        try (MongoCursor<Document> cursor = moviesCollection.find(mongoQuery).limit(limit).iterator()) {
+            while (cursor.hasNext()) {
+                Document doc = cursor.next();
+                results.add(new MovieResult(
+                    doc.getString("title"),
+                    doc.getString("overview"),
+                    doc.getString("release_date"),
+                    doc.getDouble("rating")
+                ));
+            }
+        } catch (Exception e) {
+            log.error("[MongoMovieChunkServicePure] Error searching local MongoDB", e);
+        }
+        return results;
+    }
+
     private String cleanQuotes(String val) {
         val = val.trim();
         if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {

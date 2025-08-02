@@ -30,6 +30,7 @@ public class TMDBServicePure {
     }
 
     public List<MovieResult> searchByParams(Map<String, String> params, int limit) {
+
         log.info("[TMDBServicePure] Searching with params: {}", params);
 
         TMDBResponse response = tmdbApiClient.searchMovies(params);

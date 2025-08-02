@@ -32,4 +32,9 @@ public interface MovieChunkService {
      * Search movies by title and optionally store results
      */
     List<MovieResult> searchAndStore(String title, int limit, boolean store);
+
+    /**
+     * Search movies by query and limit (for aggregation)
+     */
+    List<MovieResult> search(String query, int limit);
 }

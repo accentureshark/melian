@@ -43,26 +43,67 @@ public class AggregatedMovieService {
      */
     public List<MovieResult> searchMovies(String query, int limit) {
         log.info("Searching movies with query: '{}', limit: {}", query, limit);
-        
-        if (tmdbService == null) {
-            log.warn("TMDB service not available");
-            return Collections.emptyList();
+
+        List<CompletableFuture<List<MovieResult>>> futures = new ArrayList<>();
+
+        // Buscar en TMDB
+        if (tmdbService != null) {
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    List<MovieResult> movies = tmdbService.search(query, limit);
+                    log.info("Found {} movies from TMDB", movies.size());
+                    return movies;
+                } catch (Exception e) {
+                    log.error("Error searching movies from TMDB", e);
+                    return Collections.emptyList();
+                }
+            }, executorService));
         }
 
-        try {
-            List<MovieResult> movies = tmdbService.search(query, limit);
-            log.info("Found {} movies from TMDB", movies.size());
-
-            // Store results in all available databases asynchronously
-            if (!movies.isEmpty()) {
-                storeMoviesInAllSources(movies);
-            }
-
-            return movies;
-        } catch (Exception e) {
-            log.error("Error searching movies from TMDB", e);
-            return Collections.emptyList();
+        // Buscar en SQL
+        if (sqlService != null) {
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    List<MovieResult> movies = sqlService.search(query, limit);
+                    log.info("Found {} movies from SQL", movies.size());
+                    return movies;
+                } catch (Exception e) {
+                    log.error("Error searching movies from SQL", e);
+                    return Collections.emptyList();
+                }
+            }, executorService));
         }
+
+        // Buscar en MongoDB
+        if (mongoService != null) {
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    List<MovieResult> movies = mongoService.search(query, limit);
+                    log.info("Found {} movies from MongoDB", movies.size());
+                    return movies;
+                } catch (Exception e) {
+                    log.error("Error searching movies from MongoDB", e);
+                    return Collections.emptyList();
+                }
+            }, executorService));
+        }
+
+        List<MovieResult> aggregatedMovies = new ArrayList<>();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .thenApply(v -> futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList()))
+            .thenAccept(results -> {
+                for (List<MovieResult> movies : results) {
+                    aggregatedMovies.addAll(movies);
+                }
+            })
+            .join();
+
+        log.info("Aggregated {} total movies from all sources", aggregatedMovies.size());
+        return aggregatedMovies.stream()
+            .limit(limit)
+            .collect(Collectors.toList());
     }
 
     /**

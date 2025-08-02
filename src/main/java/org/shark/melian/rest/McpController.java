@@ -40,9 +40,22 @@ public class McpController {
                 .build();
     }
 
-    private Object handleMcpRequest(McpDto.JsonRpcRequest request) throws Exception {
+    @PostMapping("/handle")
+    @Operation(summary = "Maneja una solicitud MCP")
+    public Object handleMcpRequest(@RequestBody McpDto.JsonRpcRequest request) {
+        if (request == null || request.getMethod() == null) {
+            throw new IllegalArgumentException("El método no puede ser null");
+        }
         String method = request.getMethod();
         Object params = request.getParams();
+
+        // Validar que los parámetros requeridos no sean null
+        if ("tools/call".equals(method)) {
+            Map<String, Object> args = (Map<String, Object>) params;
+            if (args == null || args.get("name") == null) {
+                throw new IllegalArgumentException("El nombre de la herramienta no puede ser null");
+            }
+        }
 
         switch (method) {
             case "initialize": {
@@ -92,4 +105,3 @@ public class McpController {
         return mcpServer.listResources();
     }
 }
-

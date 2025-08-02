@@ -17,7 +17,7 @@ import java.util.Map;
  */
 public class McpDto {
 
-    @JsonDeserialize(builder = JsonRpcRequest.JsonRpcRequestBuilder.class)
+
     @Data
     @Builder
     public static class JsonRpcRequest {

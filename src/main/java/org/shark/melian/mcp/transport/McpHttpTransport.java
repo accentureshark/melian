@@ -13,15 +13,17 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * HTTP transport implementation for MCP server.
- * Provides both JSON-RPC over HTTP and REST endpoints.
+ * Implementación HTTP transport para MCP server.
+ * Proporciona endpoints JSON-RPC y REST.
  */
 public class McpHttpTransport {
 
     private static final Logger log = LoggerFactory.getLogger(McpHttpTransport.class);
-    
+
     private final PureMcpServer mcpServer;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private Server jettyServer;
@@ -45,11 +47,11 @@ public class McpHttpTransport {
 
         // MCP JSON-RPC endpoint
         context.addServlet(new ServletHolder(new McpJsonRpcServlet()), "/mcp");
-        
+
         // Health endpoint
         context.addServlet(new ServletHolder(new HealthServlet()), "/mcp/health");
-        
-        // REST endpoints for direct access
+
+        // REST endpoints
         context.addServlet(new ServletHolder(new ToolsServlet()), "/mcp/tools");
         context.addServlet(new ServletHolder(new ResourcesServlet()), "/mcp/resources");
 
@@ -69,15 +71,15 @@ public class McpHttpTransport {
     }
 
     private org.eclipse.jetty.server.ServerConnector createConnector() {
-        org.eclipse.jetty.server.ServerConnector connector = 
-            new org.eclipse.jetty.server.ServerConnector(jettyServer);
+        org.eclipse.jetty.server.ServerConnector connector =
+                new org.eclipse.jetty.server.ServerConnector(jettyServer);
         connector.setHost(host);
         connector.setPort(port);
         return connector;
     }
 
     /**
-     * Main MCP JSON-RPC servlet following the MCP specification
+     * Servlet principal JSON-RPC MCP
      */
     private class McpJsonRpcServlet extends HttpServlet {
 
@@ -89,7 +91,7 @@ public class McpHttpTransport {
             try {
                 McpDto.JsonRpcRequest request = objectMapper.readValue(req.getReader(), McpDto.JsonRpcRequest.class);
                 Object result = handleMcpRequest(request);
-                
+
                 McpDto.JsonRpcResponse response = McpDto.JsonRpcResponse.builder()
                         .jsonrpc("2.0")
                         .result(result)
@@ -97,10 +99,10 @@ public class McpHttpTransport {
                         .build();
 
                 objectMapper.writeValue(resp.getWriter(), response);
-                
+
             } catch (Exception e) {
                 log.error("Error handling MCP request", e);
-                
+
                 McpDto.JsonRpcResponse errorResponse = McpDto.JsonRpcResponse.builder()
                         .jsonrpc("2.0")
                         .error(McpDto.JsonRpcError.builder()
@@ -109,7 +111,7 @@ public class McpHttpTransport {
                                 .build())
                         .build();
 
-                resp.setStatus(HttpServletResponse.SC_OK); // JSON-RPC errors are still HTTP 200
+                resp.setStatus(HttpServletResponse.SC_OK); // JSON-RPC errors son HTTP 200
                 objectMapper.writeValue(resp.getWriter(), errorResponse);
             }
         }
@@ -121,16 +123,23 @@ public class McpHttpTransport {
             log.debug("Handling MCP method: {}", method);
 
             switch (method) {
-                case "initialize":
+                case "initialize": {
                     McpDto.InitializeRequest initReq = objectMapper.convertValue(params, McpDto.InitializeRequest.class);
-                    return mcpServer.initialize(initReq);
-
+                    McpDto.InitializeResult result = mcpServer.initialize(initReq);
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("serverInfo", result.getServerInfo());
+                    response.put("capabilities", result.getCapabilities());
+                    response.put("protocolVersion", result.getProtocolVersion());
+                    return response;
+                }
                 case "tools/list":
                     return mcpServer.listTools();
 
-                case "tools/call":
+                case "tools/call": {
                     McpDto.CallToolRequest callReq = objectMapper.convertValue(params, McpDto.CallToolRequest.class);
-                    return mcpServer.callTool(callReq);
+                    McpDto.CallToolResult result = mcpServer.callTool(callReq);
+                    return result; // Elimina la adaptación especial para get_server_status
+                }
 
                 case "resources/list":
                     return mcpServer.listResources();
@@ -200,14 +209,14 @@ public class McpHttpTransport {
             try {
                 String uri = req.getParameter("uri");
                 if (uri != null) {
-                    // Read specific resource
+                    // Leer recurso específico
                     McpDto.ReadResourceRequest readReq = McpDto.ReadResourceRequest.builder()
                             .uri(uri)
                             .build();
                     McpDto.ReadResourceResult result = mcpServer.readResource(readReq);
                     objectMapper.writeValue(resp.getWriter(), result);
                 } else {
-                    // List all resources
+                    // Listar todos los recursos
                     McpDto.ResourcesListResult resources = mcpServer.listResources();
                     objectMapper.writeValue(resp.getWriter(), resources);
                 }

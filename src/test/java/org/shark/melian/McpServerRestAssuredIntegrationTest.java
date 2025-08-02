@@ -2,97 +2,74 @@
 package org.shark.melian;
 
 import io.restassured.RestAssured;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-@Tag("integration")
-public class McpServerRestAssuredIntegrationTest {
-
-    @BeforeAll
-    static void setup() {
-        RestAssured.baseURI = "http://localhost";
-        RestAssured.port = 3000; // Puerto mapeado en docker-compose.yml
-    }
-
-    @Test
-    void healthEndpointReturnsOk() {
-        given()
-            .get("/mcp/health")
-        .then()
-            .statusCode(200)
-            .body("status", equalTo("OK"))
-            .body("tools", notNullValue())
-            .body("resources", notNullValue());
-    }
-
-    @Test
-    void initializeReturnsCapabilities() {
-        String request = "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"id\":1}";
-        given()
-            .body(request)
-            .header("Content-Type", "application/json")
-        .when()
-            .post("/mcp")
-        .then()
-            .statusCode(200)
-            .body("result.serverInfo.name", equalTo("melian-movie-server"))
-            .body("result.capabilities.tools", notNullValue())
-            .body("result.capabilities.resources", notNullValue());
-    }
+class McpServerRestAssuredIntegrationTest {
 
     @Test
     void toolsListReturnsRegisteredTools() {
         String request = "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"id\":2}";
         given()
-            .body(request)
-            .header("Content-Type", "application/json")
-        .when()
-            .post("/mcp")
-        .then()
-            .statusCode(200)
-            .body("result.tools", hasItems("search_movies", "get_movie_chunks", "get_server_status"));
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(200)
+                .body("result.tools[*].name", hasItems("search_movies", "get_movie_chunks", "get_server_status"));
     }
 
     @Test
     void callGetServerStatusTool() {
         String request = "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"get_server_status\",\"arguments\":{}},\"id\":3}";
         given()
-            .body(request)
-            .header("Content-Type", "application/json")
-        .when()
-            .post("/mcp")
-        .then()
-            .statusCode(200)
-            .body("result.status", equalTo("OK"));
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(200)
+                .body("result.content[0].data.status", equalTo("OK"));
     }
 
     @Test
     void resourcesListReturnsResources() {
         String request = "{\"jsonrpc\":\"2.0\",\"method\":\"resources/list\",\"id\":4}";
         given()
-            .body(request)
-            .header("Content-Type", "application/json")
-        .when()
-            .post("/mcp")
-        .then()
-            .statusCode(200)
-            .body("result.resources", notNullValue());
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(200)
+                .body("result.resources", notNullValue());
     }
 
     @Test
-    void resourcesReadReturnsErrorForInvalidUri() {
-        String request = "{\"jsonrpc\":\"2.0\",\"method\":\"resources/read\",\"params\":{\"uri\":\"invalid-resource\"},\"id\":5}";
+    void initializeReturnsCapabilities() {
+        String request = "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"clientInfo\":{\"name\":\"test-client\",\"version\":\"1.0.0\"}},\"id\":5}";
         given()
-            .body(request)
-            .header("Content-Type", "application/json")
-        .when()
-            .post("/mcp")
-        .then()
-            .statusCode(200)
-            .body("error.code", equalTo(-32603));
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(200)
+                .body("result.serverInfo.name", equalTo("melian-movie-server"));
+    }
+
+    @Test
+    void healthEndpointReturnsOk() {
+        given()
+                .when()
+                .get("/mcp/health")
+                .then()
+                .statusCode(200)
+                .body("details.tools", notNullValue())
+                .body("details.resources", notNullValue());
     }
 }

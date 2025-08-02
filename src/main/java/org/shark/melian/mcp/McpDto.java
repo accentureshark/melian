@@ -1,8 +1,12 @@
 package org.shark.melian.mcp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -13,13 +17,36 @@ import java.util.Map;
  */
 public class McpDto {
 
+    @JsonDeserialize(builder = JsonRpcRequest.JsonRpcRequestBuilder.class)
     @Data
     @Builder
     public static class JsonRpcRequest {
-        private String jsonrpc = "2.0";
+        private String jsonrpc;
         private String method;
         private Object params;
         private Object id;
+
+        public JsonRpcRequest(
+            @com.fasterxml.jackson.annotation.JsonProperty("jsonrpc") String jsonrpc,
+            @com.fasterxml.jackson.annotation.JsonProperty("method") String method,
+            @com.fasterxml.jackson.annotation.JsonProperty("params") Object params,
+            @com.fasterxml.jackson.annotation.JsonProperty("id") Object id
+        ) {
+            this.jsonrpc = jsonrpc;
+            this.method = method;
+            this.params = params;
+            this.id = id;
+        }
+
+        // Getters y setters
+        public String getJsonrpc() { return jsonrpc; }
+        public void setJsonrpc(String jsonrpc) { this.jsonrpc = jsonrpc; }
+        public String getMethod() { return method; }
+        public void setMethod(String method) { this.method = method; }
+        public Object getParams() { return params; }
+        public void setParams(Object params) { this.params = params; }
+        public Object getId() { return id; }
+        public void setId(Object id) { this.id = id; }
     }
 
     @Data

@@ -109,36 +109,53 @@ public class McpStdioTransport {
     }
 
     private Object handleMcpRequest(McpDto.JsonRpcRequest request) throws Exception {
+        log.debug("Entrando a handleMcpRequest con request: {}", request);
+
         String method = request.getMethod();
         Object params = request.getParams();
 
-        log.debug("Handling MCP method: {}", method);
+        log.info("Procesando método MCP: {}", method);
+        log.debug("Parámetros recibidos: {}", params);
 
-        switch (method) {
-            case "initialize":
-                McpDto.InitializeRequest initReq = objectMapper.convertValue(params, McpDto.InitializeRequest.class);
-                return mcpServer.initialize(initReq);
+        try {
+            Object result;
+            switch (method) {
+                case "initialize":
+                    McpDto.InitializeRequest initReq = objectMapper.convertValue(params, McpDto.InitializeRequest.class);
+                    result = mcpServer.initialize(initReq);
+                    break;
 
-            case "tools/list":
-                return mcpServer.listTools();
+                case "tools/list":
+                    result = mcpServer.listTools();
+                    break;
 
-            case "tools/call":
-                McpDto.CallToolRequest callReq = objectMapper.convertValue(params, McpDto.CallToolRequest.class);
-                return mcpServer.callTool(callReq);
+                case "tools/call":
+                    McpDto.CallToolRequest callReq = objectMapper.convertValue(params, McpDto.CallToolRequest.class);
+                    result = mcpServer.callTool(callReq);
+                    break;
 
-            case "resources/list":
-                return mcpServer.listResources();
+                case "resources/list":
+                    result = mcpServer.listResources();
+                    break;
 
-            case "resources/read":
-                McpDto.ReadResourceRequest readReq = objectMapper.convertValue(params, McpDto.ReadResourceRequest.class);
-                return mcpServer.readResource(readReq);
+                case "resources/read":
+                    McpDto.ReadResourceRequest readReq = objectMapper.convertValue(params, McpDto.ReadResourceRequest.class);
+                    result = mcpServer.readResource(readReq);
+                    break;
 
-            case "ping":
-                // Standard ping/pong for connection testing
-                return "pong";
+                case "ping":
+                    result = "pong";
+                    break;
 
-            default:
-                throw new IllegalArgumentException("Unknown method: " + method);
+                default:
+                    log.warn("Método desconocido: {}", method);
+                    throw new IllegalArgumentException("Unknown method: " + method);
+            }
+            log.debug("Resultado para método {}: {}", method, result);
+            return result;
+        } catch (Exception e) {
+            log.error("Error al procesar el método MCP: {}", method, e);
+            throw e;
         }
     }
 

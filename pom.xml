@@ -144,6 +144,8 @@
             <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
+
+
         
         <!-- Test Dependencies -->
         <dependency>
@@ -195,6 +197,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.2.6</version>
+                <configuration>
+                    <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

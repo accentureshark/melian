@@ -24,18 +24,6 @@
         <testcontainers.version>1.19.7</testcontainers.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <!-- LangChain4j MCP API -->
         <dependency>
@@ -120,6 +108,18 @@
             <version>5.1.0</version>
         </dependency>
 
+        <!-- Spring Web and Swagger -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
         <!-- Jetty for HTTP server (optional - keep for REST API) -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -157,6 +157,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -168,11 +169,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mongodb</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -202,7 +205,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.2.6</version>
                 <configuration>
-                    <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
+                    <mainClass>org.shark.melian.MelianApplication</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -246,7 +249,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
+                            <mainClass>org.shark.melian.MelianApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -264,7 +267,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
+                                    <mainClass>org.shark.melian.MelianApplication</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

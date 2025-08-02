@@ -147,8 +147,12 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 MELIAN ahora incluye un servidor MCP puro que cumple completamente con el estándar MCP sin dependencias de OpenAI.
 
 ```bash
+
 # Compilar el proyecto
 mvn clean package -DskipTests
+
+# También puedes iniciarlo directamente con Maven
+mvn spring-boot:run
 
 # Ejecutar servidor MCP con transporte HTTP
 MCP_SERVER_HTTP_ENABLED=true java -jar target/melian-*.jar

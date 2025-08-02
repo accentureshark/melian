@@ -22,6 +22,7 @@
         <h2.version>2.2.224</h2.version>
         <logback.version>1.4.14</logback.version>
         <testcontainers.version>1.19.7</testcontainers.version>
+        <spring-boot.version>3.2.5</spring-boot.version>
     </properties>
 
     <dependencyManagement>
@@ -37,6 +38,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Spring Boot runtime -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
         <!-- LangChain4j MCP API -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -287,6 +294,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>org.shark.melian.mcp.MelianMcpServer</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

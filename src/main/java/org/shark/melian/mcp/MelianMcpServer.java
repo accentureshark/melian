@@ -21,7 +21,7 @@ public class MelianMcpServer {
     private static final Logger log = LoggerFactory.getLogger(MelianMcpServer.class);
 
     private final MelianConfig config;
-    private final DatabaseConfig databaseConfig;
+    //private final DatabaseConfig databaseConfig;
     private final MongoConfig mongoConfig;
     private final TMDBApiClientPure tmdbClient;
     private final TMDBServicePure tmdbService;

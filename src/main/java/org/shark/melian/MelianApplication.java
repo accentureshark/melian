@@ -49,10 +49,7 @@ public class MelianApplication {
     }
 
     @Bean
-    public SqlMovieChunkServicePure sqlMovieChunkServicePure(DatabaseConfig databaseConfig,
-                                                             TMDBServicePure tmdbService) {
-        return new SqlMovieChunkServicePure(databaseConfig, tmdbService);
-    }
+
 
     @Bean
     public MongoMovieChunkServicePure mongoMovieChunkServicePure(MongoConfig mongoConfig,

@@ -34,7 +34,7 @@ public class MelianAiAssistant {
     private static final Logger log = LoggerFactory.getLogger(MelianAiAssistant.class);
 
     private final MelianConfig config;
-    private final DatabaseConfig databaseConfig;
+    //private final DatabaseConfig databaseConfig;
     private final MongoConfig mongoConfig;
     private final TMDBApiClientPure tmdbClient;
     private final TMDBServicePure tmdbService;
@@ -299,9 +299,7 @@ public class MelianAiAssistant {
             if (tmdbClient != null) {
                 tmdbClient.close();
             }
-            if (databaseConfig != null) {
-                databaseConfig.close();
-            }
+
             if (mongoConfig != null) {
                 mongoConfig.close();
             }

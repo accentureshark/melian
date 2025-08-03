@@ -39,6 +39,11 @@ public class PureMcpServer {
      * Handle MCP initialize request
      */
     public McpDto.InitializeResult initialize(McpDto.InitializeRequest request) {
+        if (request.getClientInfo() == null) {
+
+            throw new IllegalArgumentException("ClientInfo es obligatorio");
+        }
+        String clientName = request.getClientInfo().getName();
         log.info("MCP Initialize request from client: {}", request.getClientInfo().getName());
 
         return McpDto.InitializeResult.builder()

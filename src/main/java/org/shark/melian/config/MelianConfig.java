@@ -23,11 +23,6 @@ public class MelianConfig {
     }
 
     private void loadFromEnvironment() {
-        // Database configuration - H2 by default for testing
-        setPropertyFromEnv("db.url", "DB_URL", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
-        setPropertyFromEnv("db.username", "DB_USERNAME", "sa");
-        setPropertyFromEnv("db.password", "DB_PASSWORD", "");
-        setPropertyFromEnv("db.driver", "DB_DRIVER", "org.h2.Driver");
 
         // MongoDB configuration - optional
         setPropertyFromEnv("mongodb.uri", "MONGODB_URI", null);

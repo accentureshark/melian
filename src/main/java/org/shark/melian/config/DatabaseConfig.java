@@ -20,7 +20,6 @@ public class DatabaseConfig {
         hikariConfig.setJdbcUrl(config.getProperty("db.url"));
         hikariConfig.setUsername(config.getProperty("db.username"));
         hikariConfig.setPassword(config.getProperty("db.password"));
-        hikariConfig.setDriverClassName(config.getProperty("db.driver"));
 
         // Connection pool settings
         hikariConfig.setMaximumPoolSize(10);

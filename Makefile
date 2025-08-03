@@ -13,6 +13,9 @@ build:
 down:
 	docker-compose down
 
+local:
+	docker-compose up -d mongo mysql-sakila
+
 # Client targets
 build-client: build-client-backend build-client-ui
 

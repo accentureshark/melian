@@ -67,7 +67,7 @@ class AggregatedMovieServiceTest {
     @Test
     void searchMovies_shouldReturnEmptyWhenTMDBServiceIsNull() {
         // Arrange
-        AggregatedMovieService serviceWithoutTMDB = new AggregatedMovieService(null, sqlService, mongoService);
+        AggregatedMovieService serviceWithoutTMDB = new AggregatedMovieService(null, sqlService, Optional.of(mongoService));
 
         // Act
         List<MovieResult> results = serviceWithoutTMDB.searchMovies("test", 5);

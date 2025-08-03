@@ -20,11 +20,11 @@ public class SqlMovieChunkServicePure implements MovieChunkService {
 
     private static final Logger log = LoggerFactory.getLogger(SqlMovieChunkServicePure.class);
 
-    //private final DatabaseConfig databaseConfig;
+    private final DatabaseConfig databaseConfig;
     private final TMDBServicePure tmdbService;
 
-    public SqlMovieChunkServicePure( TMDBServicePure tmdbService) {
-
+    public SqlMovieChunkServicePure(DatabaseConfig databaseConfig, TMDBServicePure tmdbService) {
+        this.databaseConfig = databaseConfig;
         this.tmdbService = tmdbService;
         createMoviesTableIfNeeded();
     }

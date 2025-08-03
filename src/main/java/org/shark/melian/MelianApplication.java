@@ -1,74 +1,27 @@
 package org.shark.melian;
 
-import org.shark.melian.client.TMDBApiClientPure;
-import org.shark.melian.config.DatabaseConfig;
-import org.shark.melian.config.MelianConfig;
-import org.shark.melian.config.MongoConfig;
-import org.shark.melian.mcp.PureMcpServer;
-import org.shark.melian.service.MongoMovieChunkServicePure;
-import org.shark.melian.service.SqlMovieChunkServicePure;
-import org.shark.melian.service.TMDBServicePure;
-import org.shark.melian.service.AggregatedMovieService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * Spring Boot application that exposes MCP endpoints with Swagger documentation.
+ * Refactored to use Spring Boot best practices for datasources and REST APIs.
  */
 @SpringBootApplication
+@EnableConfigurationProperties
+@EnableJpaRepositories
+@EnableMongoRepositories
+@EnableMongoAuditing
+@EnableTransactionManagement
 public class MelianApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(MelianApplication.class, args);
-    }
-
-    @Bean
-    public MelianConfig melianConfig() {
-        return new MelianConfig();
-    }
-
-    @Bean
-    public DatabaseConfig databaseConfig(MelianConfig config) {
-        return new DatabaseConfig(config);
-    }
-
-    @Bean
-    public MongoConfig mongoConfig(MelianConfig config) {
-        return new MongoConfig(config);
-    }
-
-    @Bean
-    public TMDBApiClientPure tmdbApiClientPure(MelianConfig config) {
-        return new TMDBApiClientPure(config);
-    }
-
-    @Bean
-    public TMDBServicePure tmdbServicePure(TMDBApiClientPure client) {
-        return new TMDBServicePure(client);
-    }
-
-    @Bean
-
-
-    @Bean
-    public MongoMovieChunkServicePure mongoMovieChunkServicePure(MongoConfig mongoConfig,
-                                                                 TMDBServicePure tmdbService) {
-        return new MongoMovieChunkServicePure(mongoConfig, tmdbService);
-    }
-
-    @Bean
-    public AggregatedMovieService aggregatedMovieService(TMDBServicePure tmdbService,
-                                                         SqlMovieChunkServicePure sqlService,
-                                                         MongoMovieChunkServicePure mongoService) {
-        return new AggregatedMovieService(tmdbService, sqlService, mongoService);
-    }
-
-    @Bean
-    public PureMcpServer pureMcpServer(TMDBServicePure tmdbService,
-                                       SqlMovieChunkServicePure sqlService,
-                                       MongoMovieChunkServicePure mongoService) {
-        return new PureMcpServer(tmdbService, sqlService, mongoService);
     }
 }
 

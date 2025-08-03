@@ -97,17 +97,38 @@
             <version>${mysql.version}</version>
         </dependency>
         
-        <!-- Connection Pool -->
+        <!-- Connection Pool - will be managed by Spring Boot -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>5.1.0</version>
         </dependency>
 
-        <!-- Spring Web and Swagger -->
+        <!-- Spring Boot starter web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.2.6</version>
+        </dependency>
+        
+        <!-- Spring Boot starter data JPA -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <version>3.2.6</version>
+        </dependency>
+        
+        <!-- Spring Boot starter data MongoDB -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+            <version>3.2.6</version>
+        </dependency>
+
+        <!-- Spring Boot starter JDBC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
             <version>3.2.6</version>
         </dependency>
         <dependency>
@@ -139,12 +160,6 @@
             <artifactId>lombok</artifactId>
             <version>1.18.30</version>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-            <version>3.2.6</version>
         </dependency>
 
         

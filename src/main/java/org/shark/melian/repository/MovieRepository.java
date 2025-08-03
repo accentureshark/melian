@@ -18,36 +18,24 @@ import java.util.Optional;
 public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     /**
-     * Find movie by title and source (for unique constraint handling)
+     * Buscar película por título (único por título)
      */
-    Optional<Movie> findByTitleAndSource(String title, String source);
+    Optional<Movie> findByTitle(String title);
 
     /**
-     * Find movies by source with pagination
+     * Paginación simple de películas
      */
-    Page<Movie> findBySource(String source, Pageable pageable);
+    Page<Movie> findAll(Pageable pageable);
 
     /**
-     * Find movies by source, ordered by ID, with ID greater than afterId
+     * Buscar películas con id mayor a afterId (para paginación incremental)
      */
-    @Query("SELECT m FROM Movie m WHERE m.source = :source AND m.id > :afterId ORDER BY m.id")
-    List<Movie> findBySourceAndIdGreaterThan(@Param("source") String source, 
-                                           @Param("afterId") Long afterId, 
-                                           Pageable pageable);
+    @Query("SELECT m FROM Movie m WHERE m.id > :afterId ORDER BY m.id")
+    List<Movie> findByIdGreaterThan(@Param("afterId") Long afterId, Pageable pageable);
 
     /**
-     * Search movies by title containing search term (case insensitive)
+     * Buscar películas por título (búsqueda parcial, insensible a mayúsculas)
      */
     @Query("SELECT m FROM Movie m WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :query, '%')) ORDER BY m.id")
     List<Movie> searchByTitle(@Param("query") String query, Pageable pageable);
-
-    /**
-     * Custom query to filter movies with dynamic criteria
-     */
-    @Query("SELECT m FROM Movie m WHERE (:source IS NULL OR m.source = :source) " +
-           "AND (:afterId IS NULL OR m.id > :afterId) " +
-           "ORDER BY m.id")
-    List<Movie> findMoviesWithCriteria(@Param("source") String source,
-                                      @Param("afterId") Long afterId,
-                                      Pageable pageable);
 }

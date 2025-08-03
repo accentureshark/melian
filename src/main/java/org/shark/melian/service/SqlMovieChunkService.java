@@ -11,13 +11,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Spring Service for SQL Movie operations using Spring Data JPA and best practices.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,23 +30,20 @@ public class SqlMovieChunkService implements MovieChunkService {
         log.info("[SqlMovieChunkService] Storing {} movies from source: {}", movies.size(), source);
 
         for (MovieResult movieResult : movies) {
-            movieRepository.findByTitleAndSource(movieResult.title(), source)
+            movieRepository.findByTitle(movieResult.title())
                     .ifPresentOrElse(
                             existingMovie -> {
-                                // Update existing movie
                                 existingMovie.setOverview(movieResult.overview());
-                                existingMovie.setRating(movieResult.rating());
+                                existingMovie.setRating(BigDecimal.valueOf(movieResult.rating()));
+                                existingMovie.setReleaseDate(movieResult.releaseDate());
                                 movieRepository.save(existingMovie);
                             },
                             () -> {
-                                // Create new movie
-                                Movie newMovie = new Movie(
-                                        movieResult.title(),
-                                        movieResult.overview(),
-                                        movieResult.releaseDate(),
-                                        movieResult.rating(),
-                                        source
-                                );
+                                Movie newMovie = new Movie();
+                                newMovie.setTitle(movieResult.title());
+                                newMovie.setOverview(movieResult.overview());
+                                newMovie.setReleaseDate(movieResult.releaseDate());
+                                newMovie.setRating(BigDecimal.valueOf(movieResult.rating()));
                                 movieRepository.save(newMovie);
                             }
                     );
@@ -65,9 +60,9 @@ public class SqlMovieChunkService implements MovieChunkService {
 
         if (afterId != null && !afterId.isBlank()) {
             Long afterIdLong = Long.parseLong(afterId);
-            movies = movieRepository.findBySourceAndIdGreaterThan(source, afterIdLong, pageable);
+            movies = movieRepository.findByIdGreaterThan(afterIdLong, pageable);
         } else {
-            movies = movieRepository.findMoviesWithCriteria(source, null, pageable);
+            movies = movieRepository.findAll(pageable).getContent();
         }
 
         return movies.stream()
@@ -93,7 +88,7 @@ public class SqlMovieChunkService implements MovieChunkService {
     @Transactional(readOnly = true)
     public List<MovieResult> search(String query, int limit) {
         log.info("[SqlMovieChunkService] Searching local DB for movies with title LIKE: {} (limit: {})", query, limit);
-        
+
         Pageable pageable = PageRequest.of(0, limit);
         List<Movie> movies = movieRepository.searchByTitle(query, pageable);
 
@@ -102,7 +97,7 @@ public class SqlMovieChunkService implements MovieChunkService {
                         movie.getTitle(),
                         movie.getOverview(),
                         movie.getReleaseDate(),
-                        movie.getRating()
+                        movie.getRating() != null ? movie.getRating().doubleValue() : 0.0
                 ))
                 .toList();
     }
@@ -111,23 +106,20 @@ public class SqlMovieChunkService implements MovieChunkService {
         ChunkDto chunk = new ChunkDto();
         chunk.setId(String.valueOf(movie.getId()));
 
-        // Build text content for MCP compliance
         String text = String.format("Movie: %s (%s)\nOverview: %s\nRating: %.1f",
                 movie.getTitle(),
                 movie.getReleaseDate(),
                 movie.getOverview(),
-                movie.getRating());
+                movie.getRating() != null ? movie.getRating().doubleValue() : 0.0
+        );
         chunk.setText(text);
 
-        // Build metadata
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("id", movie.getId());
         metadata.put("title", movie.getTitle());
         metadata.put("overview", movie.getOverview());
         metadata.put("release_date", movie.getReleaseDate());
-        metadata.put("rating", movie.getRating());
-        metadata.put("source", movie.getSource());
-        metadata.put("created_at", movie.getCreatedAt());
+        metadata.put("rating", movie.getRating() != null ? movie.getRating().doubleValue() : 0.0);
         chunk.setMetadata(metadata);
 
         return chunk;

@@ -1,9 +1,11 @@
 package org.shark.melian.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -12,31 +14,22 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
- * Aggregated movie service that fetches data from all available sources in parallel:
- * - MySQL database (SQL)
- * - MongoDB collection
+ * Aggregated movie service using Spring best practices that fetches data from all available sources in parallel:
+ * - MySQL database (SQL) via Spring Data JPA
+ * - MongoDB collection via Spring Data MongoDB
  * - TMDB API
  * 
  * Provides clean results by filtering out unavailable sources and empty responses.
  */
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class AggregatedMovieService {
-
-    private static final Logger log = LoggerFactory.getLogger(AggregatedMovieService.class);
     
-    private final TMDBServicePure tmdbService;
-    private final MovieChunkService sqlService;
-    private final MovieChunkService mongoService;
-    private final ExecutorService executorService;
-
-    public AggregatedMovieService(TMDBServicePure tmdbService, 
-                                  MovieChunkService sqlService, 
-                                  MovieChunkService mongoService) {
-        this.tmdbService = tmdbService;
-        this.sqlService = sqlService;
-        this.mongoService = mongoService;
-        this.executorService = Executors.newFixedThreadPool(3);
-        log.info("AggregatedMovieService initialized with all data sources");
-    }
+    private final TMDBService tmdbService;
+    private final SqlMovieChunkService sqlService;
+    private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured
+    private final ExecutorService executorService = Executors.newFixedThreadPool(3);
 
     /**
      * Search movies from TMDB API and store in all available databases
@@ -46,7 +39,7 @@ public class AggregatedMovieService {
 
         List<CompletableFuture<List<MovieResult>>> futures = new ArrayList<>();
 
-        // Buscar en TMDB
+        // Search in TMDB
         if (tmdbService != null) {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
@@ -60,7 +53,7 @@ public class AggregatedMovieService {
             }, executorService));
         }
 
-        // Buscar en SQL
+        // Search in SQL database
         if (sqlService != null) {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
@@ -74,11 +67,11 @@ public class AggregatedMovieService {
             }, executorService));
         }
 
-        // Buscar en MongoDB
-        if (mongoService != null) {
+        // Search in MongoDB
+        mongoService.ifPresent(service -> {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<MovieResult> movies = mongoService.search(query, limit);
+                    List<MovieResult> movies = service.search(query, limit);
                     log.info("Found {} movies from MongoDB", movies.size());
                     return movies;
                 } catch (Exception e) {
@@ -86,13 +79,13 @@ public class AggregatedMovieService {
                     return Collections.emptyList();
                 }
             }, executorService));
-        }
+        });
 
         List<MovieResult> aggregatedMovies = new ArrayList<>();
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
             .thenApply(v -> futures.stream()
                 .map(CompletableFuture::join)
-                .collect(Collectors.toList()))
+                .toList())
             .thenAccept(results -> {
                 for (List<MovieResult> movies : results) {
                     aggregatedMovies.addAll(movies);
@@ -103,7 +96,7 @@ public class AggregatedMovieService {
         log.info("Aggregated {} total movies from all sources", aggregatedMovies.size());
         return aggregatedMovies.stream()
             .limit(limit)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -131,10 +124,10 @@ public class AggregatedMovieService {
         }
 
         // Fetch from MongoDB
-        if (mongoService != null) {
+        mongoService.ifPresent(service -> {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<ChunkDto> chunks = mongoService.getMovieChunks("mongo", limit, afterId, filter, tags, sort);
+                    List<ChunkDto> chunks = service.getMovieChunks("mongo", limit, afterId, filter, tags, sort);
                     log.debug("Retrieved {} chunks from MongoDB source", chunks.size());
                     // Add source identifier to metadata
                     chunks.forEach(chunk -> addSourceToMetadata(chunk, "mongo"));
@@ -144,7 +137,7 @@ public class AggregatedMovieService {
                     return Collections.<ChunkDto>emptyList();
                 }
             }, executorService));
-        }
+        });
 
         // Fetch from TMDB (search recent popular movies and convert to chunks)
         if (tmdbService != null) {
@@ -174,7 +167,7 @@ public class AggregatedMovieService {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
             .thenApply(v -> futures.stream()
                 .map(CompletableFuture::join)
-                .collect(Collectors.toList()))
+                .toList())
             .thenAccept(results -> {
                 for (List<ChunkDto> chunks : results) {
                     aggregatedChunks.addAll(chunks);
@@ -188,7 +181,7 @@ public class AggregatedMovieService {
         return aggregatedChunks.stream()
             .sorted((a, b) -> a.getId().compareTo(b.getId())) // Simple ID-based sorting
             .limit(limit)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -212,16 +205,16 @@ public class AggregatedMovieService {
         }
 
         // Store in MongoDB
-        if (mongoService != null) {
+        mongoService.ifPresent(service -> {
             storeFutures.add(CompletableFuture.runAsync(() -> {
                 try {
-                    mongoService.storeMovies(movies, "tmdb");
+                    service.storeMovies(movies, "tmdb");
                     log.debug("Successfully stored movies in MongoDB");
                 } catch (Exception e) {
                     log.warn("Failed to store movies in MongoDB: {}", e.getMessage());
                 }
             }, executorService));
-        }
+        });
 
         // Wait for all storage operations to complete
         CompletableFuture.allOf(storeFutures.toArray(new CompletableFuture[0])).join();
@@ -233,7 +226,7 @@ public class AggregatedMovieService {
     private List<ChunkDto> convertMoviesToChunks(List<MovieResult> movies) {
         return movies.stream()
             .map(this::convertMovieToChunk)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private ChunkDto convertMovieToChunk(MovieResult movie) {

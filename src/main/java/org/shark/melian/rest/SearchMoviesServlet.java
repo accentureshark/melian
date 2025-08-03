@@ -1,8 +1,10 @@
 package org.shark.melian.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.shark.melian.service.TMDBServicePure;
+import lombok.RequiredArgsConstructor;
+import org.shark.melian.service.AggregatedMovieService;
 import org.shark.melian.model.MovieResult;
+import org.springframework.stereotype.Component;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,16 +13,15 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Simple servlet to search movies via TMDB API and return JSON results.
+ * Simple servlet to search movies using aggregated movie service and return JSON results.
+ * Updated to use Spring best practices.
  */
+@Component
+@RequiredArgsConstructor
 public class SearchMoviesServlet extends HttpServlet {
 
-    private final TMDBServicePure tmdbService;
+    private final AggregatedMovieService aggregatedMovieService;
     private final ObjectMapper mapper = new ObjectMapper();
-
-    public SearchMoviesServlet(TMDBServicePure tmdbService) {
-        this.tmdbService = tmdbService;
-    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -37,7 +38,7 @@ public class SearchMoviesServlet extends HttpServlet {
             }
         } catch (NumberFormatException ignored) { }
 
-        List<MovieResult> results = tmdbService.search(query, limit);
+        List<MovieResult> results = aggregatedMovieService.searchMovies(query, limit);
         resp.setContentType("application/json");
         mapper.writeValue(resp.getWriter(), results);
     }

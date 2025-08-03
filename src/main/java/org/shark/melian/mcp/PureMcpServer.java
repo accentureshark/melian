@@ -1,40 +1,31 @@
 package org.shark.melian.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.shark.melian.service.TMDBServicePure;
-import org.shark.melian.service.MovieChunkService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.shark.melian.service.TMDBService;
 import org.shark.melian.service.AggregatedMovieService;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.model.ChunkDto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.*;
 
 /**
- * Pure MCP Server implementation following the Model Context Protocol specification.
- * Provides movie search and data access capabilities without OpenAI dependencies.
- * Now uses AggregatedMovieService for parallel data fetching from all sources.
+ * Spring MCP Server implementation following the Model Context Protocol specification.
+ * Provides movie search and data access capabilities using Spring best practices.
+ * Uses AggregatedMovieService for parallel data fetching from all sources.
  */
+@Component
+@RequiredArgsConstructor
+@Slf4j
 public class PureMcpServer {
-
-    private static final Logger log = LoggerFactory.getLogger(PureMcpServer.class);
     
-    private final TMDBServicePure tmdbService;
-    private final MovieChunkService sqlService;
-    private final MovieChunkService mongoService;
+    private final TMDBService tmdbService;
     private final AggregatedMovieService aggregatedMovieService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    public PureMcpServer(TMDBServicePure tmdbService, MovieChunkService sqlService, MovieChunkService mongoService) {
-        this.tmdbService = tmdbService;
-        this.sqlService = sqlService;
-        this.mongoService = mongoService;
-        this.aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, mongoService);
-        log.info("Pure MCP Server initialized with aggregated movie service");
-    }
-
     /**
      * Handle MCP initialize request
      */
@@ -207,9 +198,8 @@ public class PureMcpServer {
                             })
                             .collect(java.util.stream.Collectors.toList());
                 } else {
-                    // Get chunks from specific source (legacy support)
-                    MovieChunkService service = "mongo".equalsIgnoreCase(source) ? mongoService : sqlService;
-                    chunks = service.getMovieChunks(source, 20, null, null, null, null);
+                    // Get chunks from aggregated sources
+                    chunks = aggregatedMovieService.getMovieChunks(20, null, null, null, null);
                 }
                 
                 content = objectMapper.writeValueAsString(chunks);

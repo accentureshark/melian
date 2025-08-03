@@ -65,8 +65,7 @@ db.movies.createIndex({ "title": "text", "description": "text" });
 db.movies.createIndex({ "genre": 1 });
 db.movies.createIndex({ "rating": -1 });
 db.movies.createIndex({ "releaseDate": -1 });
-db.movies.createIndex({ "imdbId": 1 }, { unique: true });
-db.movies.createIndex({ "tmdbId": 1 }, { unique: true });
+db.movies.createIndex({ "imdbId": 1 }, { unique: true, sparse: true });
 db.movies.createIndex({ "source": 1 });
 
 // Create chunks collection for MCP resources

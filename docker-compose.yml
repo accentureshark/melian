@@ -32,9 +32,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
       MONGO_INITDB_DATABASE: melian_movies
+    command: mongod
     volumes:
       - mongo_data:/data/db
-      - ./src/main/mongo/init-movies.js:/docker-entrypoint-initdb.d/init-movies.js:ro
+      - ./src/main/mongo/init-movies.js:/docker-entrypoint-initdb.d/01-init-movies.js:ro
+      - ./src/main/mongo/init.sh:/docker-entrypoint-initdb.d/02-init.sh:ro
+      - ./src/main/mongo/movies.csv:/docker-entrypoint-initdb.d/movies.csv:ro
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 30s
@@ -43,49 +46,49 @@ services:
     networks:
       - melian-network
 
-  melian-mcp-server:
-    build: .
-    container_name: melian-mcp-server
-    ports:
-      - "3000:3000"  # HTTP REST API & MCP HTTP transport
-      - "3001:3001"  # MCP stdio/TCP transport
-    depends_on:
-      mysql-sakila:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
-    environment:
-      # Database configuration
-      - DB_URL=jdbc:mysql://mysql-sakila:3306/sakila
-      - DB_USERNAME=sakila
-      - DB_PASSWORD=sakila
-      - MONGODB_URI=mongodb://root:example@mongo:27017/melian_movies?authSource=admin
-      - MONGODB_DATABASE=melian_movies
-      
-      # MCP Server configuration
-      - MCP_SERVER_HTTP_ENABLED=true
-      - MCP_SERVER_STDIO_ENABLED=true
-      - MCP_SERVER_PORT=3001
-      - MCP_SERVER_HOST=0.0.0.0
-      
-      # TMDB/IMDB API configuration
-      - TMDB_ACCESS_TOKEN=${TMDB_ACCESS_TOKEN:-eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y}
-      
-      # Disable OpenAI requirement
-      - DISABLE_OPENAI=true
-      - MCP_PURE_MODE=true
-      
-      # Logging
-      - LOG_LEVEL=INFO
-      - MCP_LOG_LEVEL=DEBUG
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/mcp/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - melian-network
+#  melian-mcp-server:
+#    build: .
+#    container_name: melian-mcp-server
+#    ports:
+#      - "3000:3000"  # HTTP REST API & MCP HTTP transport
+#      - "3001:3001"  # MCP stdio/TCP transport
+#    depends_on:
+#      mysql-sakila:
+#        condition: service_healthy
+#      mongo:
+#        condition: service_healthy
+#    environment:
+#      # Database configuration
+#      - DB_URL=jdbc:mysql://mysql-sakila:3306/sakila
+#      - DB_USERNAME=sakila
+#      - DB_PASSWORD=sakila
+#      - MONGODB_URI=mongodb://root:example@mongo:27017/melian_movies?authSource=admin
+#      - MONGODB_DATABASE=melian_movies
+#
+#      # MCP Server configuration
+#      - MCP_SERVER_HTTP_ENABLED=true
+#      - MCP_SERVER_STDIO_ENABLED=true
+#      - MCP_SERVER_PORT=3001
+#      - MCP_SERVER_HOST=0.0.0.0
+#
+#      # TMDB/IMDB API configuration
+#      - TMDB_ACCESS_TOKEN=${TMDB_ACCESS_TOKEN:-eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y}
+#
+#      # Disable OpenAI requirement
+#      - DISABLE_OPENAI=true
+#      - MCP_PURE_MODE=true
+#
+#      # Logging
+#      - LOG_LEVEL=INFO
+#      - MCP_LOG_LEVEL=DEBUG
+#    restart: unless-stopped
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:3000/mcp/health"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#    networks:
+#      - melian-network
 
 volumes:
   mongo_data:

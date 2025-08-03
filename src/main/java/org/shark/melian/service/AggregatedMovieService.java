@@ -1,5 +1,6 @@
 package org.shark.melian.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.model.ChunkDto;
@@ -30,6 +31,19 @@ public class AggregatedMovieService {
     private final SqlMovieChunkService sqlService;
     private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured
     private final ExecutorService executorService = Executors.newFixedThreadPool(3);
+
+
+    @PostConstruct
+    public void init() {
+        log.info("Estado de servicios disponibles:");
+        log.info("TMDB Service: {}", tmdbService != null ? "DISPONIBLE" : "NO DISPONIBLE");
+        log.info("SQL Service: {}", sqlService != null ? "DISPONIBLE" : "NO DISPONIBLE");
+        log.info("MongoDB Service: {}", mongoService.isPresent() ? "DISPONIBLE" : "NO DISPONIBLE");
+
+        if (!mongoService.isPresent()) {
+            log.warn("El servicio de MongoDB no está disponible. Verifica la configuración spring.data.mongodb.uri");
+        }
+    }
 
     /**
      * Search movies from TMDB API and store in all available databases

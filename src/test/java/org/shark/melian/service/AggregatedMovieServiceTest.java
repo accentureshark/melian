@@ -19,19 +19,19 @@ import static org.mockito.Mockito.*;
 class AggregatedMovieServiceTest {
 
     @Mock
-    private TMDBServicePure tmdbService;
+    private TMDBService tmdbService;
 
     @Mock
-    private MovieChunkService sqlService;
+    private SqlMovieChunkService sqlService;
 
     @Mock
-    private MovieChunkService mongoService;
+    private MongoMovieChunkService mongoService;
 
     private AggregatedMovieService aggregatedMovieService;
 
     @BeforeEach
     void setUp() {
-        aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, mongoService);
+        aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, Optional.of(mongoService));
     }
 
     @Test

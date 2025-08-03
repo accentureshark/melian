@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.shark.melian.service.TMDBServicePure;
-import org.shark.melian.service.MovieChunkService;
+import org.shark.melian.service.TMDBService;
+import org.shark.melian.service.AggregatedMovieService;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.model.ChunkDto;
 
@@ -26,19 +26,16 @@ import static org.mockito.Mockito.*;
 class PureMcpServerTest {
 
     @Mock
-    private TMDBServicePure tmdbService;
+    private TMDBService tmdbService;
 
     @Mock
-    private MovieChunkService sqlService;
-
-    @Mock
-    private MovieChunkService mongoService;
+    private AggregatedMovieService aggregatedMovieService;
 
     private PureMcpServer mcpServer;
 
     @BeforeEach
     void setUp() {
-        mcpServer = new PureMcpServer(tmdbService, sqlService, mongoService);
+        mcpServer = new PureMcpServer(tmdbService, aggregatedMovieService);
     }
 
     @Test
@@ -121,7 +118,7 @@ class PureMcpServerTest {
                 new ChunkDto("1", "Movie chunk 1", Map.of("source", "sql")),
                 new ChunkDto("2", "Movie chunk 2", Map.of("source", "sql"))
         );
-        when(sqlService.getMovieChunks(eq("sql"), eq(10), any(), any(), any(), any()))
+        when(aggregatedMovieService.getMovieChunks(eq(10), any(), any(), any(), any()))
                 .thenReturn(mockChunks);
 
         Map<String, Object> arguments = new HashMap<>();
@@ -143,7 +140,7 @@ class PureMcpServerTest {
         assertTrue(result.getContent().get(0).getText().contains("Retrieved"));
         assertTrue(result.getContent().get(0).getText().contains("sql"));
         assertNotNull(result.getContent().get(0).getData());
-        verify(sqlService).getMovieChunks(eq("sql"), eq(10), any(), any(), any(), any());
+        verify(aggregatedMovieService).getMovieChunks(eq(10), any(), any(), any(), any());
     }
 
     @Test

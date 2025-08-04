@@ -92,7 +92,7 @@ public class PureMcpServer {
      * Call a tool with given arguments
      */
     public McpDto.CallToolResult callTool(McpDto.CallToolRequest request) {
-        log.debug("Calling tool: {} with args: {}", request.getName(), request.getArguments());
+        log.info("Calling tool: {} with args: {}", request.getName(), request.getArguments());
 
         try {
             switch (request.getName()) {
@@ -127,7 +127,7 @@ public class PureMcpServer {
      * List available resources
      */
     public McpDto.ResourcesListResult listResources() {
-        log.debug("Listing available MCP resources");
+        log.info("Listing available MCP resources");
 
         List<McpDto.Resource> resources = Arrays.asList(
                 McpDto.Resource.builder()
@@ -165,7 +165,7 @@ public class PureMcpServer {
      * Read a resource by URI
      */
     public McpDto.ReadResourceResult readResource(McpDto.ReadResourceRequest request) {
-        log.debug("Reading resource: {}", request.getUri());
+        log.info("Reading resource: {}", request.getUri());
 
         try {
             String uri = request.getUri();
@@ -246,6 +246,7 @@ public class PureMcpServer {
     private McpDto.CallToolResult handleSearchMovies(Map<String, Object> args) {
         String query = (String) args.get("query");
         Integer limit = args.containsKey("limit") ? (Integer) args.get("limit") : 10;
+        log.info("handleSearchMovies: {}", query);
 
         if (query == null || query.trim().isEmpty()) {
             return McpDto.CallToolResult.builder()

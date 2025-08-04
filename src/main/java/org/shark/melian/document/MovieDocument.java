@@ -10,33 +10,34 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-/**
- * MongoDB Document for Movie data following Spring Data MongoDB best practices.
- */
 @Document(collection = "movies")
-@CompoundIndex(def = "{'title': 1, 'source': 1}", unique = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class MovieDocument {
-
     @Id
     private String id;
 
     private String title;
-    private String overview;
     private String releaseDate;
-    private Double rating;
-    private String source;
+    private Object rating;
+    private String genre;
+    private String overview;
+    private String crew;
+    private String orig_title;
+    private String status;
+    private String orig_lang;
+    private Double budget_x;
+    private Double revenue;
+    private String country;
 
-    @CreatedDate
-    private LocalDateTime createdAt;
 
-    public MovieDocument(String title, String overview, String releaseDate, Double rating, String source) {
+    // Constructor existente para compatibilidad
+    public MovieDocument(String title, String overview, String releaseDate, Double rating) {
         this.title = title;
         this.overview = overview;
         this.releaseDate = releaseDate;
         this.rating = rating;
-        this.source = source;
+
     }
 }

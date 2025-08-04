@@ -125,7 +125,7 @@ public class AggregatedMovieService {
         if (sqlService != null) {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<ChunkDto> chunks = sqlService.getMovieChunks("sql", limit, afterId, filter, tags, sort);
+                    List<ChunkDto> chunks = sqlService.getMovieChunks( limit, afterId, filter, tags, sort);
                     log.debug("Retrieved {} chunks from SQL source", chunks.size());
                     // Add source identifier to metadata
                     chunks.forEach(chunk -> addSourceToMetadata(chunk, "sql"));
@@ -141,7 +141,7 @@ public class AggregatedMovieService {
         mongoService.ifPresent(service -> {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<ChunkDto> chunks = service.getMovieChunks("mongo", limit, afterId, filter, tags, sort);
+                    List<ChunkDto> chunks = service.getMovieChunks( limit, afterId, filter, tags, sort);
                     log.debug("Retrieved {} chunks from MongoDB source", chunks.size());
                     // Add source identifier to metadata
                     chunks.forEach(chunk -> addSourceToMetadata(chunk, "mongo"));
@@ -210,7 +210,7 @@ public class AggregatedMovieService {
         if (sqlService != null) {
             storeFutures.add(CompletableFuture.runAsync(() -> {
                 try {
-                    sqlService.storeMovies(movies, "tmdb");
+                    sqlService.storeMovies(movies);
                     log.debug("Successfully stored movies in SQL database");
                 } catch (Exception e) {
                     log.warn("Failed to store movies in SQL database: {}", e.getMessage());
@@ -222,7 +222,7 @@ public class AggregatedMovieService {
         mongoService.ifPresent(service -> {
             storeFutures.add(CompletableFuture.runAsync(() -> {
                 try {
-                    service.storeMovies(movies, "tmdb");
+                    service.storeMovies(movies);
                     log.debug("Successfully stored movies in MongoDB");
                 } catch (Exception e) {
                     log.warn("Failed to store movies in MongoDB: {}", e.getMessage());

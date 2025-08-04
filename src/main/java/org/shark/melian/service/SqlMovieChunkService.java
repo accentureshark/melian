@@ -26,10 +26,11 @@ public class SqlMovieChunkService implements MovieChunkService {
 
     @Override
     @Transactional
-    public void storeMovies(List<MovieResult> movies, String source) {
-        log.info("[SqlMovieChunkService] Storing {} movies from source: {}", movies.size(), source);
+    public void storeMovies(List<MovieResult> movies) {
+        log.info("[SqlMovieChunkService] Storing {} movies from source: {}", movies.size());
 
         for (MovieResult movieResult : movies) {
+
             movieRepository.findByTitle(movieResult.title())
                     .ifPresentOrElse(
                             existingMovie -> {
@@ -52,8 +53,8 @@ public class SqlMovieChunkService implements MovieChunkService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChunkDto> getMovieChunks(String source, int limit, String afterId, String filter, List<String> tags, String sort) {
-        log.info("[SqlMovieChunkService] Getting movie chunks for source: {}", source);
+    public List<ChunkDto> getMovieChunks( int limit, String afterId, String filter, List<String> tags, String sort) {
+        log.info("[SqlMovieChunkService] Getting movie chunks ");
 
         Pageable pageable = PageRequest.of(0, limit);
         List<Movie> movies;
@@ -78,7 +79,7 @@ public class SqlMovieChunkService implements MovieChunkService {
         List<MovieResult> movies = tmdbService.search(title, limit);
 
         if (store && !movies.isEmpty()) {
-            storeMovies(movies, "tmdb");
+            storeMovies(movies );
         }
 
         return movies;

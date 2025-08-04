@@ -14,13 +14,12 @@ public interface MovieChunkService {
     /**
      * Store movie data as chunks for later retrieval
      */
-    void storeMovies(List<MovieResult> movies, String source);
+    void storeMovies(List<MovieResult> movies);
 
     /**
      * Retrieve movie chunks from storage
      */
     List<ChunkDto> getMovieChunks(
-            String source,
             int limit,
             String afterId,
             String filter,

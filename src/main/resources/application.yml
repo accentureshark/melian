@@ -11,8 +11,7 @@ spring:
     database-platform: org.hibernate.dialect.MySQLDialect
   data:
     mongodb:
-      mongodb:
-        uri: mongodb://root:example@localhost:27017/melian?authSource=admin
+      uri: mongodb://root:example@localhost:27017/melian?authSource=admin
 
 # Puedes mantener la configuración anterior si otros componentes la usan
 mongodb:

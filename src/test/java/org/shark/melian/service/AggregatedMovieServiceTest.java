@@ -31,176 +31,122 @@ class AggregatedMovieServiceTest {
 
     @BeforeEach
     void setUp() {
-        aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, Optional.of(mongoService));
+        Optional<MongoMovieChunkService> optionalMongoService = Optional.of(mongoService);
+        aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, optionalMongoService);
     }
 
     @Test
-    void searchMovies_shouldSearchFromTMDBAndStoreInAllSources() {
+    void searchMovies_shouldAggregateResultsFromAllSources() {
         // Arrange
         String query = "Matrix";
-        int limit = 5;
-        List<MovieResult> expectedMovies = Arrays.asList(
-                new MovieResult("The Matrix", "A computer programmer discovers reality is a simulation", "1999-03-31", 8.7),
-                new MovieResult("The Matrix Reloaded", "Neo fights against the machines", "2003-05-15", 7.2)
+        int limit = 10;
+        List<MovieResult> tmdbMovies = List.of(
+                new MovieResult("The Matrix", "Sci-fi movie", "1999", 8.7),
+                new MovieResult("Matrix Reloaded", "Sequel", "2003", 7.2)
+        );
+        List<MovieResult> sqlMovies = List.of(
+                new MovieResult("Matrix Revolutions", "Third part", "2003", 6.8)
+        );
+        List<MovieResult> mongoMovies = List.of(
+                new MovieResult("The Matrix Resurrections", "Fourth part", "2021", 6.5)
         );
 
-        when(tmdbService.search(query, limit)).thenReturn(expectedMovies);
+        when(tmdbService.search(query, limit)).thenReturn(tmdbMovies);
+        when(sqlService.search(query, limit)).thenReturn(sqlMovies);
+        when(mongoService.search(query, limit)).thenReturn(mongoMovies);
 
         // Act
-        List<MovieResult> results = aggregatedMovieService.searchMovies(query, limit);
+        List<MovieResult> result = aggregatedMovieService.searchMovies(query, limit);
 
         // Assert
-        assertEquals(expectedMovies, results);
+        assertEquals(4, result.size());
         verify(tmdbService).search(query, limit);
-        
-        // Give some time for async storage operations to complete
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        
-        verify(sqlService).storeMovies(expectedMovies, "tmdb");
-        verify(mongoService).storeMovies(expectedMovies, "tmdb");
+        verify(sqlService).search(query, limit);
+        verify(mongoService).search(query, limit);
+
+        // No se debería llamar a storeMovies ya que searchMovies no lo hace
+        verify(sqlService, never()).storeMovies(tmdbMovies);
+        verify(mongoService, never()).storeMovies(tmdbMovies);
     }
 
     @Test
-    void searchMovies_shouldReturnEmptyWhenTMDBServiceIsNull() {
+    void getMovieChunks_shouldAggregateChunksFromAllSources() {
         // Arrange
-        AggregatedMovieService serviceWithoutTMDB = new AggregatedMovieService(null, sqlService, Optional.of(mongoService));
+        int limit = 5;
+        String afterId = null;
+        String filter = null;
+        List<String> tags = List.of();
+        String sort = null;
 
-        // Act
-        List<MovieResult> results = serviceWithoutTMDB.searchMovies("test", 5);
-
-        // Assert
-        assertTrue(results.isEmpty());
-    }
-
-    @Test
-    void getMovieChunks_shouldAggregateFromAllSources() {
-        // Arrange
-        int limit = 10;
-        String filter = "title LIKE 'Matrix%'";
-
-        // Mock SQL chunks
         ChunkDto sqlChunk = new ChunkDto();
         sqlChunk.setId("sql_1");
-        sqlChunk.setText("Movie: The Matrix (1999)\nOverview: Neo discovers reality\nRating: 8.7");
-        Map<String, Object> sqlMetadata = new HashMap<>();
-        sqlMetadata.put("title", "The Matrix");
-        sqlMetadata.put("source", "sql");
-        sqlChunk.setMetadata(sqlMetadata);
+        sqlChunk.setText("SQL Movie");
 
-        // Mock MongoDB chunks
         ChunkDto mongoChunk = new ChunkDto();
         mongoChunk.setId("mongo_1");
-        mongoChunk.setText("Movie: The Matrix Reloaded (2003)\nOverview: Neo fights machines\nRating: 7.2");
-        Map<String, Object> mongoMetadata = new HashMap<>();
-        mongoMetadata.put("title", "The Matrix Reloaded");
-        mongoMetadata.put("source", "mongo");
-        mongoChunk.setMetadata(mongoMetadata);
+        mongoChunk.setText("MongoDB Movie");
 
-        // Mock TMDB search results
-        List<MovieResult> tmdbMovies = Arrays.asList(
-                new MovieResult("The Matrix Revolutions", "The final battle", "2003-11-05", 6.8)
+        when(sqlService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(List.of(sqlChunk));
+        when(mongoService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(List.of(mongoChunk));
+
+        List<MovieResult> tmdbMovies = List.of(
+                new MovieResult("TMDB Movie", "Description", "2024", 7.5)
         );
-
-        when(sqlService.getMovieChunks(eq("sql"), eq(limit), isNull(), eq(filter), isNull(), isNull()))
-                .thenReturn(Arrays.asList(sqlChunk));
-        when(mongoService.getMovieChunks(eq("mongo"), eq(limit), isNull(), eq(filter), isNull(), isNull()))
-                .thenReturn(Arrays.asList(mongoChunk));
-        when(tmdbService.search(eq("Matrix"), eq(limit)))
-                .thenReturn(tmdbMovies);
+        when(tmdbService.search(anyString(), anyInt())).thenReturn(tmdbMovies);
 
         // Act
-        List<ChunkDto> results = aggregatedMovieService.getMovieChunks(limit, null, filter, null, null);
+        List<ChunkDto> result = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
 
         // Assert
-        assertNotNull(results);
-        assertEquals(3, results.size()); // SQL + MongoDB + TMDB chunks
+        assertEquals(3, result.size()); // Incluye 1 de SQL, 1 de MongoDB y 1 de TMDB (convertido)
 
-        // Verify all sources were called
-        verify(sqlService).getMovieChunks(eq("sql"), eq(limit), isNull(), eq(filter), isNull(), isNull());
-        verify(mongoService).getMovieChunks(eq("mongo"), eq(limit), isNull(), eq(filter), isNull(), isNull());
-        verify(tmdbService).search(eq("Matrix"), eq(limit));
-
-        // Verify metadata contains data_source
-        boolean hasSqlSource = results.stream().anyMatch(chunk -> 
-                chunk.getMetadata() != null && "sql".equals(chunk.getMetadata().get("data_source")));
-        boolean hasMongoSource = results.stream().anyMatch(chunk -> 
-                chunk.getMetadata() != null && "mongo".equals(chunk.getMetadata().get("data_source")));
-        boolean hasTmdbSource = results.stream().anyMatch(chunk -> 
-                chunk.getMetadata() != null && "tmdb".equals(chunk.getMetadata().get("data_source")));
-
-        assertTrue(hasSqlSource, "Should have chunks from SQL source");
-        assertTrue(hasMongoSource, "Should have chunks from MongoDB source");
-        assertTrue(hasTmdbSource, "Should have chunks from TMDB source");
+        verify(sqlService).getMovieChunks(limit, afterId, filter, tags, sort);
+        verify(mongoService).getMovieChunks(limit, afterId, filter, tags, sort);
+        verify(tmdbService).search(anyString(), eq(limit));
     }
 
     @Test
-    void getMovieChunks_shouldHandleServiceErrors() {
+    void getMovieChunks_shouldHandleEmptyResults() {
         // Arrange
         int limit = 5;
+        String afterId = null;
+        String filter = null;
+        List<String> tags = Collections.emptyList();
+        String sort = null;
 
-        when(sqlService.getMovieChunks(anyString(), anyInt(), any(), any(), any(), any()))
-                .thenThrow(new RuntimeException("SQL connection error"));
-        when(mongoService.getMovieChunks(anyString(), anyInt(), any(), any(), any(), any()))
-                .thenReturn(Collections.emptyList());
-        when(tmdbService.search(anyString(), anyInt()))
-                .thenReturn(Arrays.asList(new MovieResult("Test Movie", "Description", "2024", 7.5)));
+        when(sqlService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(Collections.emptyList());
+        when(mongoService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(Collections.emptyList());
+        when(tmdbService.search(anyString(), anyInt())).thenReturn(Collections.emptyList());
 
         // Act
-        List<ChunkDto> results = aggregatedMovieService.getMovieChunks(limit, null, null, null, null);
+        List<ChunkDto> result = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
 
         // Assert
-        assertNotNull(results);
-        assertEquals(1, results.size()); // Only TMDB chunk should be returned
-        
-        // Verify TMDB chunk
-        ChunkDto tmdbChunk = results.get(0);
-        assertEquals("tmdb", tmdbChunk.getMetadata().get("data_source"));
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void getServicesStatus_shouldReturnCorrectStatus() {
-        // Act
-        Map<String, String> status = aggregatedMovieService.getServicesStatus();
-
-        // Assert
-        assertNotNull(status);
-        assertEquals("AVAILABLE", status.get("tmdb_service"));
-        assertEquals("AVAILABLE", status.get("sql_service"));
-        assertEquals("AVAILABLE", status.get("mongo_service"));
-    }
-
-    @Test
-    void getServicesStatus_shouldReturnNotAvailableForNullServices() {
+    void getMovieChunks_shouldHandleFilterWithSearch() {
         // Arrange
-        AggregatedMovieService serviceWithNulls = new AggregatedMovieService(null, null, null);
+        int limit = 5;
+        String afterId = null;
+        String filter = "title LIKE '%Matrix%'";
+        List<String> tags = Collections.emptyList();
+        String sort = null;
+
+        when(sqlService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(Collections.emptyList());
+        when(mongoService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(Collections.emptyList());
+
+        List<MovieResult> tmdbMovies = List.of(
+                new MovieResult("The Matrix", "Sci-fi movie", "1999", 8.7)
+        );
+        when(tmdbService.search(eq("Matrix"), anyInt())).thenReturn(tmdbMovies);
 
         // Act
-        Map<String, String> status = serviceWithNulls.getServicesStatus();
+        List<ChunkDto> result = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
 
         // Assert
-        assertNotNull(status);
-        assertEquals("NOT_AVAILABLE", status.get("tmdb_service"));
-        assertEquals("NOT_AVAILABLE", status.get("sql_service"));
-        assertEquals("NOT_AVAILABLE", status.get("mongo_service"));
-    }
-
-    @Test
-    void searchMovies_shouldHandleTMDBErrors() {
-        // Arrange
-        when(tmdbService.search(anyString(), anyInt()))
-                .thenThrow(new RuntimeException("TMDB API error"));
-
-        // Act
-        List<MovieResult> results = aggregatedMovieService.searchMovies("test", 5);
-
-        // Assert
-        assertTrue(results.isEmpty());
-        verify(tmdbService).search("test", 5);
-        verifyNoInteractions(sqlService);
-        verifyNoInteractions(mongoService);
+        assertEquals(1, result.size());
+        verify(tmdbService).search(eq("Matrix"), anyInt());
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,44 +29,44 @@ public class MongoMovieChunkService implements MovieChunkService {
     private final TMDBService tmdbService;
 
     @Override
-    public void storeMovies(List<MovieResult> movies, String source) {
-        log.info("[MongoMovieChunkService] Storing {} movies from source: {}", movies.size(), source);
+    public void storeMovies(List<MovieResult> movies) {
+        log.info("[MongoMovieChunkService] Storing {} movies from source", movies.size());
 
         for (MovieResult movieResult : movies) {
-            movieDocumentRepository.findByTitleAndSource(movieResult.title(), source)
+            movieDocumentRepository.findByTitle(movieResult.title())
                     .ifPresentOrElse(
                             existingMovie -> {
-                                // Update existing movie
                                 existingMovie.setOverview(movieResult.overview());
                                 existingMovie.setRating(movieResult.rating());
+                                existingMovie.setReleaseDate(movieResult.releaseDate());
                                 movieDocumentRepository.save(existingMovie);
+                                log.debug("Updated existing movie: {}", existingMovie.getTitle());
                             },
                             () -> {
-                                // Create new movie
                                 MovieDocument newMovie = new MovieDocument(
                                         movieResult.title(),
                                         movieResult.overview(),
                                         movieResult.releaseDate(),
-                                        movieResult.rating(),
-                                        source
+                                        movieResult.rating()
                                 );
                                 movieDocumentRepository.save(newMovie);
+                                log.debug("Created new movie: {}", newMovie.getTitle());
                             }
                     );
         }
     }
 
     @Override
-    public List<ChunkDto> getMovieChunks(String source, int limit, String afterId, String filter, List<String> tags, String sort) {
-        log.info("[MongoMovieChunkService] Getting movie chunks for source: {}", source);
+    public List<ChunkDto> getMovieChunks(int limit, String afterId, String filter, List<String> tags, String sort) {
+        log.info("[MongoMovieChunkService] Getting movie chunks");
 
         Pageable pageable = PageRequest.of(0, limit);
         List<MovieDocument> movies;
 
         if (afterId != null && !afterId.isBlank()) {
-            movies = movieDocumentRepository.findBySourceAndIdGreaterThan(source, afterId, pageable);
+            movies = movieDocumentRepository.findByIdGreaterThan(afterId, pageable);
         } else {
-            movies = movieDocumentRepository.findMoviesWithCriteria(source, null, pageable);
+            movies = movieDocumentRepository.findMoviesWithCriteria(null, pageable);
         }
 
         return movies.stream()
@@ -80,7 +81,7 @@ public class MongoMovieChunkService implements MovieChunkService {
         List<MovieResult> movies = tmdbService.search(title, limit);
 
         if (store && !movies.isEmpty()) {
-            storeMovies(movies, "tmdb");
+            storeMovies(movies);
         }
 
         return movies;
@@ -91,41 +92,67 @@ public class MongoMovieChunkService implements MovieChunkService {
         log.info("[MongoMovieChunkService] Searching local MongoDB for movies with title LIKE: {} (limit: {})", query, limit);
 
         Pageable pageable = PageRequest.of(0, limit);
-        List<MovieDocument> movies = movieDocumentRepository.searchByTitle(query, pageable);
+        String cleanedQuery = query.trim().replaceAll("\\s+", " ");
+
+        List<MovieDocument> movies = movieDocumentRepository.searchByTitle(cleanedQuery, pageable);
+
+        if (movies.isEmpty()) {
+            movies = movieDocumentRepository.searchByTitleFuzzy(cleanedQuery, pageable);
+        }
+
+        if (movies.isEmpty()) {
+            movies = movieDocumentRepository.searchByTitleExact(cleanedQuery);
+        }
 
         return movies.stream()
                 .map(movie -> new MovieResult(
                         movie.getTitle(),
-                        movie.getOverview(),
-                        movie.getReleaseDate(),
-                        movie.getRating()
+                        movie.getOverview() != null ? movie.getOverview() : "",
+                        movie.getReleaseDate() != null ? movie.getReleaseDate() : "",
+                        convertRating(movie.getRating())
                 ))
                 .toList();
+    }
+
+    private double convertRating(Object rating) {
+        if (rating == null) return 0.0;
+        if (rating instanceof Number) return ((Number) rating).doubleValue();
+        try {
+            return Double.parseDouble(rating.toString());
+        } catch (Exception e) {
+            log.warn("No se pudo convertir el rating '{}' a double: {}", rating, e.getMessage());
+            return 0.0;
+        }
     }
 
     private ChunkDto mapMovieToChunk(MovieDocument movie) {
         ChunkDto chunk = new ChunkDto();
         chunk.setId(movie.getId());
 
-        // Build text content for MCP compliance
         String text = String.format("Movie: %s (%s)\nOverview: %s\nRating: %.1f",
                 movie.getTitle(),
-                movie.getReleaseDate(),
-                movie.getOverview(),
-                movie.getRating());
+                movie.getReleaseDate() != null ? movie.getReleaseDate() : "Unknown",
+                movie.getOverview() != null ? movie.getOverview() : "No overview available",
+                convertRating(movie.getRating()));
         chunk.setText(text);
 
-        // Build metadata
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("id", movie.getId());
         metadata.put("title", movie.getTitle());
         metadata.put("overview", movie.getOverview());
         metadata.put("release_date", movie.getReleaseDate());
-        metadata.put("rating", movie.getRating());
-        metadata.put("source", movie.getSource());
-        metadata.put("created_at", movie.getCreatedAt());
-        chunk.setMetadata(metadata);
+        metadata.put("rating", convertRating(movie.getRating()));
 
+        if (movie.getGenre() != null) metadata.put("genre", movie.getGenre());
+        if (movie.getOrig_title() != null) metadata.put("orig_title", movie.getOrig_title());
+        if (movie.getCrew() != null) metadata.put("crew", movie.getCrew());
+        if (movie.getStatus() != null) metadata.put("status", movie.getStatus());
+        if (movie.getOrig_lang() != null) metadata.put("orig_lang", movie.getOrig_lang());
+        if (movie.getBudget_x() != null) metadata.put("budget", movie.getBudget_x());
+        if (movie.getRevenue() != null) metadata.put("revenue", movie.getRevenue());
+        if (movie.getCountry() != null) metadata.put("country", movie.getCountry());
+
+        chunk.setMetadata(metadata);
         return chunk;
     }
 }

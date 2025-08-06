@@ -183,6 +183,17 @@ export MCP_PURE_MODE=true
 export DISABLE_OPENAI=true
 ```
 
+#### Configuración del idioma de búsqueda
+
+El idioma utilizado para las búsquedas en MongoDB se controla mediante la propiedad `melian.search.locale` en `application.yml`.
+Por defecto se usa `en`, pero puede cambiarse, por ejemplo, a español:
+
+```yaml
+melian:
+  search:
+    locale: es
+```
+
 #### Endpoints MCP Estándar:
 
 - **JSON-RPC**: `POST /mcp` - Endpoint principal MCP con métodos estándar

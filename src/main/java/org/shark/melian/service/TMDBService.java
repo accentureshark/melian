@@ -3,14 +3,13 @@ package org.shark.melian.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.client.TMDBApiClientPure;
-import org.shark.melian.config.MelianProperties;
 import org.shark.melian.model.MovieResult;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * Spring Service for TMDB operations following Spring best practices.
+ * Servicio Spring para operaciones TMDB con logs detallados.
  */
 @Service
 @RequiredArgsConstructor
@@ -21,7 +20,13 @@ public class TMDBService {
 
     public List<MovieResult> search(String title, int limit) {
         String cleanedTitle = title != null ? title.trim().replaceAll("\\s+", " ") : "";
-        log.info("[TMDBService] Searching for movies with title: {} (limit: {})", cleanedTitle, limit);
-        return tmdbApiClient.searchMovies(cleanedTitle, limit);
+        log.info("[TMDBService] Buscando películas con título: '{}' (límite: {})", cleanedTitle, limit);
+        List<MovieResult> results = tmdbApiClient.searchMovies(cleanedTitle, limit);
+        if (results == null) {
+            log.warn("[TMDBService] Resultado nulo recibido del cliente TMDB");
+        } else {
+            log.info("[TMDBService] Resultados obtenidos: {}", results.size());
+        }
+        return results;
     }
 }

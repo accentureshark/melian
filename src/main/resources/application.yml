@@ -11,12 +11,13 @@ spring:
     database-platform: org.hibernate.dialect.MySQLDialect
   data:
     mongodb:
-      uri: mongodb://root:example@localhost:27017/melian?authSource=admin
+      uri: mongodb://root:example@localhost:27017/melian_movies?authSource=admin
 
-# Puedes mantener la configuración anterior si otros componentes la usan
+
+# Pued es mantener la configuración anterior si otros componentes la usan
 mongodb:
   uri: mongodb://localhost:27017
-  database: melian
+  database: melian_movies
 
 # src/main/resources/application.yml
 mcp:

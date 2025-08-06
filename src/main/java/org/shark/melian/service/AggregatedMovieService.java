@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
  * - MySQL database (SQL) via Spring Data JPA
  * - MongoDB collection via Spring Data MongoDB
  * - TMDB API
- * - IMDB API
  * 
  * Provides clean results by filtering out unavailable sources and empty responses.
  */
@@ -29,17 +28,15 @@ import java.util.stream.Collectors;
 public class AggregatedMovieService {
     
     private final TMDBService tmdbService;
-    private final IMDBService imdbService;
     private final SqlMovieChunkService sqlService;
     private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured
-    private final ExecutorService executorService = Executors.newFixedThreadPool(4); // Increased to 4 for IMDB
+    private final ExecutorService executorService = Executors.newFixedThreadPool(3); // Reduced to 3 since IMDB removed
 
 
     @PostConstruct
     public void init() {
         log.info("Estado de servicios disponibles:");
         log.info("TMDB Service: {}", tmdbService != null ? "DISPONIBLE" : "NO DISPONIBLE");
-        log.info("IMDB Service: {}", imdbService != null ? "DISPONIBLE" : "NO DISPONIBLE");
         log.info("SQL Service: {}", sqlService != null ? "DISPONIBLE" : "NO DISPONIBLE");
         log.info("MongoDB Service: {}", mongoService.isPresent() ? "DISPONIBLE" : "NO DISPONIBLE");
 
@@ -66,20 +63,6 @@ public class AggregatedMovieService {
                     return movies;
                 } catch (Exception e) {
                     log.error("Error searching movies from TMDB", e);
-                    return Collections.emptyList();
-                }
-            }, executorService));
-        }
-
-        // Search in IMDB
-        if (imdbService != null) {
-            futures.add(CompletableFuture.supplyAsync(() -> {
-                try {
-                    List<MovieResult> movies = imdbService.search(cleanedQuery, limit);
-                    log.info("Found {} movies from IMDB", movies.size());
-                    return movies;
-                } catch (Exception e) {
-                    log.error("Error searching movies from IMDB", e);
                     return Collections.emptyList();
                 }
             }, executorService));
@@ -189,29 +172,6 @@ public class AggregatedMovieService {
                     return chunks;
                 } catch (Exception e) {
                     log.warn("Error fetching chunks from TMDB source: {}", e.getMessage());
-                    return Collections.<ChunkDto>emptyList();
-                }
-            }, executorService));
-        }
-
-        // Fetch from IMDB (search recent popular movies and convert to chunks)
-        if (imdbService != null) {
-            futures.add(CompletableFuture.supplyAsync(() -> {
-                try {
-                    // Use a generic search to get recent popular movies if no specific filter
-                    String searchQuery = extractSearchQueryFromFilter(filter);
-                    if (searchQuery == null || searchQuery.isEmpty()) {
-                        searchQuery = "2024"; // Default to recent movies
-                    }
-                    
-                    List<MovieResult> movies = imdbService.search(searchQuery, limit);
-                    List<ChunkDto> chunks = convertMoviesToChunks(movies, "imdb");
-                    log.debug("Retrieved {} chunks from IMDB source", chunks.size());
-                    // Add source identifier to metadata
-                    chunks.forEach(chunk -> addSourceToMetadata(chunk, "imdb"));
-                    return chunks;
-                } catch (Exception e) {
-                    log.warn("Error fetching chunks from IMDB source: {}", e.getMessage());
                     return Collections.<ChunkDto>emptyList();
                 }
             }, executorService));
@@ -363,7 +323,6 @@ public class AggregatedMovieService {
         Map<String, String> status = new HashMap<>();
         
         status.put("tmdb_service", tmdbService != null ? "AVAILABLE" : "NOT_AVAILABLE");
-        status.put("imdb_service", imdbService != null ? "AVAILABLE" : "NOT_AVAILABLE");
         status.put("sql_service", sqlService != null ? "AVAILABLE" : "NOT_AVAILABLE");
         status.put("mongo_service", mongoService != null ? "AVAILABLE" : "NOT_AVAILABLE");
         

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.document.MovieDocument;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
-import org.shark.melian.repository.MovieDocumentRepository;
+import org.shark.melian.repository.mongo.MovieDocumentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;

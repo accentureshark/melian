@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.entity.Movie;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
-import org.shark.melian.repository.MovieRepository;
+import org.shark.melian.repository.jpa.MovieRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

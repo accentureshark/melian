@@ -1,4 +1,4 @@
-package org.shark.melian.repository;
+package org.shark.melian.repository.jpa;
 
 import org.shark.melian.entity.Movie;
 import org.springframework.data.domain.Page;

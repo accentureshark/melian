@@ -67,7 +67,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
             mongoQuery.addCriteria(Criteria.where("title").regex(".*" + query + ".*", "i"));
         }
 
-        mongoQuery.with(pageable).collation(Collation.of("en").strength(1));
+        mongoQuery.limit(pageable.getPageSize()).skip(pageable.getOffset());
+        mongoQuery.with(pageable.getSort());
+        mongoQuery.collation(Collation.of("en").strength(1));
+        log.info("Consulta generada: {}", mongoQuery);
+
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
         log.info("Encontradas {} películas para consulta: '{}'", results.size(), query);
 
@@ -104,7 +108,10 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
         );
 
         Query mongoQuery = new Query(criteria);
-        mongoQuery.with(pageable).collation(Collation.of("en").strength(1));
+        mongoQuery.limit(pageable.getPageSize()).skip(pageable.getOffset());
+        mongoQuery.with(pageable.getSort());
+        mongoQuery.collation(Collation.of("en").strength(1));
+        log.info("Consulta generada: {}", mongoQuery);
 
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
         log.info("Encontradas {} películas en búsqueda fuzzy para: '{}'", results.size(), query);

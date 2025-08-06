@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.text.Normalizer;
+import java.util.regex.Pattern;
 
 /**
  * Spring Data MongoDB Repository para MovieDocument con métodos mejorados de búsqueda.
@@ -52,24 +54,29 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
     @Override
     public List<MovieDocument> searchByTitle(String query, Pageable pageable) {
         query = query.trim().replaceAll("\\s+", " ");
-        log.info("Buscando películas con título que contenga: '{}'", query);
+        String normalizedQuery = Normalizer.normalize(query, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        log.info("Buscando películas con título que contenga: '{}'", normalizedQuery);
 
         Query mongoQuery = new Query();
 
-        String[] words = query.split(" ");
+        String[] words = normalizedQuery.split(" ");
         if (words.length > 1) {
             Criteria[] criterias = new Criteria[words.length];
             for (int i = 0; i < words.length; i++) {
-                criterias[i] = Criteria.where("title").regex(".*" + words[i] + ".*", "i");
+                String quotedWord = Pattern.quote(words[i]);
+                criterias[i] = Criteria.where("title")
+                        .regex(Pattern.compile(".*" + quotedWord + ".*", Pattern.CASE_INSENSITIVE));
             }
             mongoQuery.addCriteria(new Criteria().andOperator(criterias));
         } else {
-            mongoQuery.addCriteria(Criteria.where("title").regex(".*" + query + ".*", "i"));
+            String quotedQuery = Pattern.quote(normalizedQuery);
+            mongoQuery.addCriteria(Criteria.where("title")
+                    .regex(Pattern.compile(".*" + quotedQuery + ".*", Pattern.CASE_INSENSITIVE)));
         }
 
         mongoQuery.with(pageable).collation(Collation.of("en").strength(1));
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
-        log.info("Encontradas {} películas para consulta: '{}'", results.size(), query);
+        log.info("Encontradas {} películas para consulta: '{}'", results.size(), normalizedQuery);
 
         return results;
     }
@@ -95,19 +102,22 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
     @Override
     public List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable) {
         query = query.trim().replaceAll("\\s+", " ");
-        log.info("Realizando búsqueda fuzzy para: '{}'", query);
+        String normalizedQuery = Normalizer.normalize(query, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        log.info("Realizando búsqueda fuzzy para: '{}'", normalizedQuery);
 
+        String quotedQuery = Pattern.quote(normalizedQuery);
+        Pattern pattern = Pattern.compile(".*" + quotedQuery + ".*", Pattern.CASE_INSENSITIVE);
         Criteria criteria = new Criteria().orOperator(
-                Criteria.where("title").regex(".*" + query + ".*", "i"),
-                Criteria.where("orig_title").regex(".*" + query + ".*", "i"),
-                Criteria.where("overview").regex(".*" + query + ".*", "i")
+                Criteria.where("title").regex(pattern),
+                Criteria.where("orig_title").regex(pattern),
+                Criteria.where("overview").regex(pattern)
         );
 
         Query mongoQuery = new Query(criteria);
         mongoQuery.with(pageable).collation(Collation.of("en").strength(1));
 
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
-        log.info("Encontradas {} películas en búsqueda fuzzy para: '{}'", results.size(), query);
+        log.info("Encontradas {} películas en búsqueda fuzzy para: '{}'", results.size(), normalizedQuery);
 
         return results;
     }

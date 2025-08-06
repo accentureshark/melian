@@ -22,9 +22,6 @@ class AggregatedMovieServiceTest {
     private TMDBService tmdbService;
 
     @Mock
-    private IMDBService imdbService;
-
-    @Mock
     private SqlMovieChunkService sqlService;
 
     @Mock
@@ -35,7 +32,7 @@ class AggregatedMovieServiceTest {
     @BeforeEach
     void setUp() {
         Optional<MongoMovieChunkService> optionalMongoService = Optional.of(mongoService);
-        aggregatedMovieService = new AggregatedMovieService(tmdbService, imdbService, sqlService, optionalMongoService);
+        aggregatedMovieService = new AggregatedMovieService(tmdbService, sqlService, optionalMongoService);
     }
 
     @Test
@@ -47,9 +44,6 @@ class AggregatedMovieServiceTest {
                 new MovieResult("The Matrix", "Sci-fi movie", "1999", 8.7),
                 new MovieResult("Matrix Reloaded", "Sequel", "2003", 7.2)
         );
-        List<MovieResult> imdbMovies = List.of(
-                new MovieResult("Matrix Revolutions", "Third part from IMDB", "2003", 6.9)
-        );
         List<MovieResult> sqlMovies = List.of(
                 new MovieResult("Matrix Revolutions", "Third part", "2003", 6.8)
         );
@@ -58,7 +52,6 @@ class AggregatedMovieServiceTest {
         );
 
         when(tmdbService.search(query, limit)).thenReturn(tmdbMovies);
-        when(imdbService.search(query, limit)).thenReturn(imdbMovies);
         when(sqlService.search(query, limit)).thenReturn(sqlMovies);
         when(mongoService.search(query, limit)).thenReturn(mongoMovies);
 
@@ -66,9 +59,8 @@ class AggregatedMovieServiceTest {
         List<MovieResult> result = aggregatedMovieService.searchMovies(query, limit);
 
         // Assert
-        assertEquals(5, result.size()); // 2 TMDB + 1 IMDB + 1 SQL + 1 MongoDB = 5 total
+        assertEquals(4, result.size()); // 2 TMDB + 1 SQL + 1 MongoDB = 4 total
         verify(tmdbService).search(query, limit);
-        verify(imdbService).search(query, limit);
         verify(sqlService).search(query, limit);
         verify(mongoService).search(query, limit);
 
@@ -100,22 +92,17 @@ class AggregatedMovieServiceTest {
         List<MovieResult> tmdbMovies = List.of(
                 new MovieResult("TMDB Movie", "Description", "2024", 7.5)
         );
-        List<MovieResult> imdbMovies = List.of(
-                new MovieResult("IMDB Movie", "Description", "2024", 7.8)
-        );
         when(tmdbService.search(anyString(), anyInt())).thenReturn(tmdbMovies);
-        when(imdbService.search(anyString(), anyInt())).thenReturn(imdbMovies);
 
         // Act
         List<ChunkDto> result = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
 
         // Assert
-        assertEquals(4, result.size()); // Incluye 1 de SQL, 1 de MongoDB, 1 de TMDB y 1 de IMDB (convertidos)
+        assertEquals(3, result.size()); // Incluye 1 de SQL, 1 de MongoDB, 1 de TMDB (convertido)
 
         verify(sqlService).getMovieChunks(limit, afterId, filter, tags, sort);
         verify(mongoService).getMovieChunks(limit, afterId, filter, tags, sort);
         verify(tmdbService).search(anyString(), eq(limit));
-        verify(imdbService).search(anyString(), eq(limit));
     }
 
     @Test
@@ -130,7 +117,6 @@ class AggregatedMovieServiceTest {
         when(sqlService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(Collections.emptyList());
         when(mongoService.getMovieChunks(limit, afterId, filter, tags, sort)).thenReturn(Collections.emptyList());
         when(tmdbService.search(anyString(), anyInt())).thenReturn(Collections.emptyList());
-        when(imdbService.search(anyString(), anyInt())).thenReturn(Collections.emptyList());
 
         // Act
         List<ChunkDto> result = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
@@ -154,19 +140,14 @@ class AggregatedMovieServiceTest {
         List<MovieResult> tmdbMovies = List.of(
                 new MovieResult("The Matrix", "Sci-fi movie", "1999", 8.7)
         );
-        List<MovieResult> imdbMovies = List.of(
-                new MovieResult("The Matrix IMDB", "Sci-fi movie from IMDB", "1999", 8.8)
-        );
         when(tmdbService.search(eq("Matrix"), anyInt())).thenReturn(tmdbMovies);
-        when(imdbService.search(eq("Matrix"), anyInt())).thenReturn(imdbMovies);
 
         // Act
         List<ChunkDto> result = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
 
         // Assert
-        assertEquals(2, result.size()); // 1 from TMDB + 1 from IMDB
+        assertEquals(1, result.size()); // 1 from TMDB
         verify(tmdbService).search(eq("Matrix"), anyInt());
-        verify(imdbService).search(eq("Matrix"), anyInt());
     }
 
     @Test
@@ -180,7 +161,6 @@ class AggregatedMovieServiceTest {
         );
 
         when(tmdbService.search(query, limit)).thenReturn(Collections.emptyList());
-        when(imdbService.search(query, limit)).thenReturn(Collections.emptyList());
         when(sqlService.search(query, limit)).thenReturn(Collections.emptyList());
         when(mongoService.search(query, limit)).thenReturn(mongoMovies);
 

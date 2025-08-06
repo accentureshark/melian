@@ -14,7 +14,7 @@ db.movies.insertMany([
     releaseDate: "1999-03-31",
     rating: 8.7, // stored as number
     genre: ["Action", "Sci-Fi"],
-    description: "A computer programmer is led to fight an underground war against powerful computers who have constructed his entire reality with a system called the Matrix.",
+    overview: "A computer programmer is led to fight an underground war against powerful computers who have constructed his entire reality with a system called the Matrix.",
     imdbId: "tt0133093",
     tmdbId: 603,
     director: "The Wachowskis",
@@ -39,7 +39,7 @@ db.movies.insertMany([
     releaseDate: "2010-07-16",
     rating: 8.8, // stored as number
     genre: ["Action", "Drama", "Sci-Fi"],
-    description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+    overview: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
     imdbId: "tt1375666", 
     tmdbId: 27205,
     director: "Christopher Nolan",
@@ -61,7 +61,7 @@ db.movies.insertMany([
 ]);
 
 // Create indexes for efficient querying
-db.movies.createIndex({ "title": "text", "description": "text" });
+db.movies.createIndex({ "title": "text", "overview": "text" });
 db.movies.createIndex({ "genre": 1 });
 db.movies.createIndex({ "rating": -1 });
 db.movies.createIndex({ "releaseDate": -1 });

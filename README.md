@@ -65,22 +65,24 @@ Además, MELIAN permite elegir la fuente de datos (`source=sql` o `source=rest`)
 
 ---
 
-## Arquitectura Refactorizada (Sin Spring Boot)
+## Arquitectura LangChain4j (Nueva Implementación)
 
-MELIAN ahora utiliza el **SDK oficial de MCP de Java** (`io.modelcontextprotocol.sdk:mcp:0.10.0`) en lugar de Spring Boot, proporcionando:
+MELIAN ahora utiliza **LangChain4j MCP API** (`dev.langchain4j:langchain4j-mcp:1.2.0-beta8`) en lugar del MCP SDK, convirtiéndose en un asistente de IA que puede integrar múltiples servidores MCP externos. Esto proporciona:
 
-- ✅ **MCP Compliance Nativo**: Implementación directa del protocolo MCP sin abstracciones adicionales
-- ✅ **Menor Overhead**: Sin dependencias de Spring Boot ni framework web
-- ✅ **Startup Rápido**: Inicio más rápido al eliminar el contenedor Spring
-- ✅ **Menor Tamaño**: JAR más pequeño y eficiente en memoria
-- ✅ **Pure Java**: Configuración basada en código Java puro sin anotaciones mágicas
+- ✅ **Integración de IA Nativa**: Asistente conversacional usando LangChain4j AiServices
+- ✅ **Herramientas de Película Integradas**: Búsqueda TMDB, chunks de datos, estado del servidor
+- ✅ **Conexión a Servidores MCP Externos**: Capacidad de conectar múltiples servidores MCP
+- ✅ **Modo Dual**: Funciona sin OpenAI (modo herramientas) o con OpenAI (modo IA completo)
+- ✅ **Configuración Flexible**: Base de datos opcional, integración externa opcional
+- ✅ **Startup Rápido**: H2 en memoria por defecto, sin dependencias externas requeridas
 
 ### Componentes Principales:
 
-- **MelianMcpServer**: Servidor principal usando MCP SDK oficial
-- **Pure Services**: Servicios sin dependencias de Spring (TMDBServicePure, SqlMovieChunkServicePure, MongoMovieChunkServicePure)
+- **MelianAiAssistant**: Asistente principal usando LangChain4j AiServices
+- **MovieTools**: Herramientas de película con anotaciones @Tool de LangChain4j
+- **Pure Services**: Servicios sin dependencias externas (TMDBServicePure, SqlMovieChunkServicePure, MongoMovieChunkServicePure)
 - **Configuration**: Gestión de configuración basada en properties y variables de entorno
-- **STDIO Transport**: Comunicación MCP nativa vía STDIN/STDOUT
+- **MCP Client Integration**: Capacidad de conectar a servidores MCP externos via stdio/HTTP
 
 ---
 
@@ -138,9 +140,99 @@ Cada implementación de MELIAN puede ser adaptada al área, negocio o dominio:
 
 ---
 
-## 🚀 ¿Cómo ejecutar el servidor MCP de MELIAN?
+## 🚀 ¿Cómo ejecutar el Servidor MCP MELIAN?
 
-### Opción 1: Script Automático (Recomendado)
+### Opción 1: Servidor MCP Puro (Recomendado para MCP compliance)
+
+MELIAN ahora incluye un servidor MCP puro que cumple completamente con el estándar MCP sin dependencias de OpenAI.
+
+```bash
+# Compilar el proyecto
+mvn clean package -DskipTests
+
+# Ejecutar servidor MCP con transporte HTTP
+MCP_SERVER_HTTP_ENABLED=true java -jar target/melian-*.jar
+
+# Ejecutar servidor MCP con transporte Stdio (por defecto)
+java -jar target/melian-*.jar
+
+# Ejecutar con ambos transportes
+MCP_SERVER_HTTP_ENABLED=true MCP_SERVER_STDIO_ENABLED=true java -jar target/melian-*.jar
+```
+
+#### Variables de Entorno para MCP Server:
+
+```bash
+# Configuración de transporte
+export MCP_SERVER_HTTP_ENABLED=true    # Habilitar transporte HTTP
+export MCP_SERVER_STDIO_ENABLED=true   # Habilitar transporte Stdio
+export MCP_SERVER_HOST=0.0.0.0         # Host del servidor HTTP
+export MCP_SERVER_PORT=3000             # Puerto del servidor HTTP
+
+# Configuración de bases de datos (opcional)
+export DB_URL="jdbc:mysql://localhost:3307/sakila"
+export DB_USERNAME="sakila"
+export DB_PASSWORD="sakila"
+export MONGODB_URI="mongodb://root:example@localhost:27017/melian_movies"
+
+# Configuración de TMDB/IMDB
+export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
+
+# Modo puro MCP (sin OpenAI)
+export MCP_PURE_MODE=true
+export DISABLE_OPENAI=true
+```
+
+#### Configuración del idioma de búsqueda
+
+El idioma utilizado para las búsquedas en MongoDB se controla mediante la propiedad `melian.search.locale` en `application.yml`.
+Por defecto se usa `en`, pero puede cambiarse, por ejemplo, a español:
+
+```yaml
+melian:
+  search:
+    locale: es
+```
+
+#### Endpoints MCP Estándar:
+
+- **JSON-RPC**: `POST /mcp` - Endpoint principal MCP con métodos estándar
+- **Health**: `GET /mcp/health` - Estado del servidor
+- **Tools**: `GET /mcp/tools` - Lista de herramientas disponibles
+- **Resources**: `GET /mcp/resources` - Lista de recursos disponibles
+
+#### Métodos MCP Soportados:
+
+1. **initialize** - Inicializar conexión MCP
+2. **tools/list** - Listar herramientas disponibles
+3. **tools/call** - Ejecutar herramienta específica
+4. **resources/list** - Listar recursos disponibles
+5. **resources/read** - Leer contenido de recurso específico
+
+#### Herramientas MCP Disponibles:
+
+- `search_movies` - Buscar películas usando TMDB API
+- `get_movie_chunks` - Obtener chunks de datos de películas para RAG
+- `get_server_status` - Obtener estado del servidor
+
+### Opción 2: Con Docker Compose (Recomendado para desarrollo)
+
+```bash
+# Levantar todo el stack (MySQL, MongoDB, MCP Server)
+docker-compose up -d
+
+# Ver logs del servidor MCP
+docker-compose logs -f melian-mcp-server
+
+# Probar el servidor
+./test-mcp-server.sh
+```
+
+### Opción 3: Asistente de IA MELIAN (Legacy)
+
+Para compatibilidad hacia atrás, el asistente de IA original sigue disponible:
+
+### Opción 3: Script Automático (Legacy - AI Assistant)
 
 ```bash
 # Hacer el script ejecutable (solo la primera vez)
@@ -156,31 +248,42 @@ El script te guiará paso a paso para:
 - ✅ Configurar bases de datos opcionales
 - ✅ Levantar Docker si es requerido
 - ✅ Configurar token TMDB
-- ✅ Ejecutar el servidor
+- ✅ Configurar OpenAI API Key (opcional)
+- ✅ Ejecutar el asistente
 
-### Opción 2: Ejecución Manual
+### Opción 4: Ejecución Manual (Legacy - AI Assistant)
 
 #### 1. Requisitos previos:
 - **Java 17+** (`java --version`)
 - **Maven 3.8+** (solo para compilación)
 - **Docker** (opcional, para MongoDB/MySQL)
 - **Token TMDB** (opcional, para búsquedas reales)
+- **OpenAI API Key** (opcional, para modo IA completo)
 
 #### 2. Compilar el proyecto:
 ```bash
 mvn clean package -DskipTests
 ```
 
-#### 3. Ejecución básica (H2 en memoria):
+#### 3. Ejecución básica (modo herramientas solamente):
 ```bash
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
-#### 4. Ejecución completa con configuración:
+#### 4. Ejecución con IA completa:
 ```bash
+# OpenAI API Key (para modo IA completo)
+export OPENAI_API_KEY="tu_openai_api_key_aqui"
+
 # Token TMDB (recomendado)
 export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
 
+# Ejecutar asistente
+java -jar target/melian-0.1.0-SNAPSHOT.jar
+```
+
+#### 5. Con bases de datos externas (opcional):
+```bash
 # Base de datos MySQL (opcional)
 export DB_URL="jdbc:mysql://localhost:3307/sakila"
 export DB_USERNAME="sakila"
@@ -190,33 +293,45 @@ export DB_PASSWORD="sakila"
 export MONGODB_URI="mongodb://root:example@localhost:27017"
 export MONGODB_DATABASE="melian"
 
-# Ejecutar servidor
+# Habilitar servidor MCP de archivos (opcional)
+export ENABLE_FILESYSTEM_MCP="true"
+
+# Ejecutar asistente
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
-#### 5. Con Docker (bases de datos completas):
+#### 6. Con Docker (bases de datos completas):
 ```bash
 # Levantar bases de datos
 docker-compose up -d
 
 # Configurar variables
+export OPENAI_API_KEY="tu_openai_api_key_aqui"
 export TMDB_ACCESS_TOKEN="tu_token_tmdb_aqui"
 
-# Ejecutar servidor
+# Ejecutar asistente
 java -jar target/melian-0.1.0-SNAPSHOT.jar
 ```
 
-### ✅ Verificación del servidor
+### ✅ Verificación del asistente
 
-Cuando el servidor esté corriendo verás:
+#### Modo Herramientas (sin OpenAI API Key):
 ```
-INFO  -- MelianMcpTools initialized
-INFO  -- MelianMcpResources initialized
-INFO  -- Created MCP server with 3 tools and 3 resources
-INFO  -- MELIAN MCP Server started with STDIO transport
-INFO  -- Server is ready to accept MCP connections via STDIO...
-INFO  -- Available tools: search_movies, get_movie_chunks, get_server_status
-INFO  -- Available resources: movies/metadata, movies/chunks, server/docs
+🔧 MELIAN Tool Mode - No ChatModel available
+Available commands:
+  search <query> [limit] - Search movies
+  chunks <source> [limit] [filter] - Get movie chunks
+  status - Get server status
+  quit/exit - Stop
+```
+
+#### Modo IA Completo (con OpenAI API Key):
+```
+🎬 MELIAN AI Assistant ready! Ask me about movies or type 'help' for commands.
+
+> Tell me about Matrix movies
+> Search for comedy movies from 2020
+> Get movie data chunks about action films
 ```
 
 ### 📖 Documentación detallada
@@ -224,19 +339,20 @@ INFO  -- Available resources: movies/metadata, movies/chunks, server/docs
 Para instrucciones completas, troubleshooting y configuración avanzada:
 - **[📘 Guía Completa de Ejecución](./EJECUTAR_SERVIDOR_MCP.md)**
 
-### 🎯 Funcionalidades del servidor MCP
+### 🎯 Funcionalidades del Asistente IA
 
-El servidor proporciona:
-- 🔍 **3 Herramientas MCP**:
-  - `search_movies`: Búsqueda de películas usando TMDB API
-  - `get_movie_chunks`: Obtener chunks de datos para aplicaciones RAG
-  - `get_server_status`: Estado y configuración del servidor
-- 📊 **3 Recursos MCP**:
-  - `movies/metadata`: Metadata y esquema de la base de datos
-  - `movies/chunks`: Chunks de datos de películas para RAG
-  - `server/docs`: Documentación del servidor y guía de uso
+El asistente proporciona:
+- 🤖 **Asistente de IA Conversacional**:
+  - Chat natural sobre películas
+  - Búsqueda inteligente de contenido
+  - Análisis de datos de películas
+- 🔧 **3 Herramientas Integradas**:
+  - `searchMovies`: Búsqueda de películas usando TMDB API
+  - `getMovieChunks`: Obtener chunks de datos para aplicaciones RAG
+  - `getServerStatus`: Estado y configuración del servidor
+- 🌐 **Integración MCP Externa**: Conexión opcional a servidores MCP externos
 - 🗄️ **Múltiples fuentes**: SQL (H2/MySQL), MongoDB, TMDB API
-- 🚀 **Protocolo estándar**: Compatible con cualquier cliente MCP
+- 🚀 **Modo Dual**: Funciona con o sin OpenAI API Key
 
 ---
 

@@ -67,8 +67,9 @@ echo "1. Básica (H2 en memoria)"
 echo "2. Con MongoDB (requiere Docker)"
 echo "3. Con MySQL (requiere Docker)"
 echo "4. Completa (MySQL + MongoDB + Docker)"
+echo "5. HTTP SSE (exponer servidor remoto)"
 echo ""
-echo "Selecciona una opción (1-4) o presiona Enter para básica:"
+echo "Selecciona una opción (1-5) o presiona Enter para básica:"
 read -r option
 
 case "$option" in
@@ -108,6 +109,22 @@ case "$option" in
         export DB_DRIVER="com.mysql.cj.jdbc.Driver"
         export MONGODB_URI="mongodb://root:example@localhost:27017"
         echo "✅ MySQL y MongoDB configurados"
+        ;;
+    5)
+        echo "🐳 Verificando bases de datos..."
+        if ! docker ps | grep -q mysql || ! docker ps | grep -q mongo; then
+            echo "📦 Levantando todas las bases de datos..."
+            docker-compose up -d
+            sleep 15
+        fi
+        export DB_URL="jdbc:mysql://localhost:3307/sakila"
+        export DB_USERNAME="sakila"
+        export DB_PASSWORD="sakila"
+        export DB_DRIVER="com.mysql.cj.jdbc.Driver"
+        export MONGODB_URI="mongodb://root:example@localhost:27017"
+        echo "✅ MySQL y MongoDB configurados"
+        echo "🌐 Iniciando en modo HTTP SSE"
+        export MCP_SERVER_HTTP_ENABLED=true
         ;;
     *)
         echo "✅ Usando configuración básica (H2 en memoria)"

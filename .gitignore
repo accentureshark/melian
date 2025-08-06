@@ -45,3 +45,9 @@ build/
 .env.test.local
 .env.production.local
 /mcp-client/ui/node_modules/
+
+# Backup files
+backup/
+
+# Maven generated files
+dependency-reduced-pom.xml

@@ -114,26 +114,20 @@ public class MongoMovieChunkService implements MovieChunkService {
                 .toList();
     }
 
-    private double convertRating(Object rating) {
-        if (rating == null) return 0.0;
-        if (rating instanceof Number) return ((Number) rating).doubleValue();
-        try {
-            return Double.parseDouble(rating.toString());
-        } catch (Exception e) {
-            log.warn("No se pudo convertir el rating '{}' a double: {}", rating, e.getMessage());
-            return 0.0;
-        }
+    private double convertRating(Double rating) {
+        return java.util.Optional.ofNullable(rating).orElse(0.0);
     }
 
     private ChunkDto mapMovieToChunk(MovieDocument movie) {
         ChunkDto chunk = new ChunkDto();
         chunk.setId(movie.getId());
 
+        double rating = convertRating(movie.getRating());
         String text = String.format("Movie: %s (%s)\nOverview: %s\nRating: %.1f",
                 movie.getTitle(),
                 movie.getReleaseDate() != null ? movie.getReleaseDate() : "Unknown",
                 movie.getOverview() != null ? movie.getOverview() : "No overview available",
-                convertRating(movie.getRating()));
+                rating);
         chunk.setText(text);
 
         Map<String, Object> metadata = new HashMap<>();
@@ -141,7 +135,7 @@ public class MongoMovieChunkService implements MovieChunkService {
         metadata.put("title", movie.getTitle());
         metadata.put("overview", movie.getOverview());
         metadata.put("release_date", movie.getReleaseDate());
-        metadata.put("rating", convertRating(movie.getRating()));
+        metadata.put("rating", rating);
 
         if (movie.getGenre() != null) metadata.put("genre", movie.getGenre());
         if (movie.getOrig_title() != null) metadata.put("orig_title", movie.getOrig_title());

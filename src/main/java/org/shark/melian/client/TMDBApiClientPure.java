@@ -30,6 +30,8 @@ public class TMDBApiClientPure {
         try {
             String apiUrl = melianProperties.getTmdb().getApiUrl();
             String accessToken = melianProperties.getTmdb().getAccessToken();
+
+
             
             StringBuilder uriBuilder = new StringBuilder(apiUrl).append("/search/movie");
             uriBuilder.append("?query=").append(URLEncoder.encode(query, StandardCharsets.UTF_8));

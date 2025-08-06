@@ -2,26 +2,18 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    url: ${DB_URL:jdbc:h2:mem:testdb}
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:}
-    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+    url: jdbc:mysql://localhost:3307/sakila
+    username: sakila
+    password: sakila
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-    database-platform: ${DB_DIALECT:org.hibernate.dialect.H2Dialect}
+    database-platform: org.hibernate.dialect.MySQLDialect
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://root:example@localhost:27017/melian_movies?authSource=admin}
-
-
-# Pued es mantener la configuración anterior si otros componentes la usan
-mongodb:
-  uri: mongodb://localhost:27017
-  database: melian_movies
-
-# src/main/resources/application.yml
+      uri: mongodb://root:example@localhost:27017/melian_movies?authSource=admin
 
 melian:
   mcp:
@@ -39,12 +31,9 @@ melian:
   search:
     locale: en
 
-
 logging:
   level:
     com.zaxxer.hikari: INFO
     org.hibernate.SQL: DEBUG
     org.springframework.data.mongodb: DEBUG
     org.shark.melian.repository.CustomMovieDocumentRepositoryImpl: DEBUG
-
-

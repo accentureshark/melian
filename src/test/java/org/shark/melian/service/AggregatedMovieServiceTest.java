@@ -149,4 +149,27 @@ class AggregatedMovieServiceTest {
         assertEquals(1, result.size());
         verify(tmdbService).search(eq("Matrix"), anyInt());
     }
+
+    @Test
+    void searchMovies_shouldFindMoviesIgnoringAccents() {
+        // Arrange
+        String query = "Amelie";
+        int limit = 5;
+
+        List<MovieResult> mongoMovies = List.of(
+                new MovieResult("Amélie", "French film", "2001", 8.3)
+        );
+
+        when(tmdbService.search(query, limit)).thenReturn(Collections.emptyList());
+        when(sqlService.search(query, limit)).thenReturn(Collections.emptyList());
+        when(mongoService.search(query, limit)).thenReturn(mongoMovies);
+
+        // Act
+        List<MovieResult> result = aggregatedMovieService.searchMovies(query, limit);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals("Amélie", result.get(0).title());
+        verify(mongoService).search(query, limit);
+    }
 }

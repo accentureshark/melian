@@ -20,7 +20,7 @@ public class MovieDocument {
 
     private String title;
     private String releaseDate;
-    private Object rating;
+    private Double rating;
     private String genre;
     private String overview;
     private String crew;

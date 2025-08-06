@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @SpringBootApplication
 @EnableConfigurationProperties
-@EnableJpaRepositories
-@EnableMongoRepositories
+@EnableJpaRepositories(basePackages = "org.shark.melian.repository.jpa")
+@EnableMongoRepositories(basePackages = "org.shark.melian.repository.mongo")
 @EnableMongoAuditing
 @EnableTransactionManagement
 public class MelianApplication {

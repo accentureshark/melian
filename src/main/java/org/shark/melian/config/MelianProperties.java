@@ -11,10 +11,15 @@ import org.springframework.stereotype.Component;
 public class MelianProperties {
 
     private final Tmdb tmdb = new Tmdb();
+    private final Imdb imdb = new Imdb();
     private final Mcp mcp = new Mcp();
 
     public Tmdb getTmdb() {
         return tmdb;
+    }
+
+    public Imdb getImdb() {
+        return imdb;
     }
 
     public Mcp getMcp() {
@@ -22,6 +27,27 @@ public class MelianProperties {
     }
 
     public static class Tmdb {
+        private String apiUrl = "https://api.themoviedb.org/3";
+        private String accessToken;
+
+        public String getApiUrl() {
+            return apiUrl;
+        }
+
+        public void setApiUrl(String apiUrl) {
+            this.apiUrl = apiUrl;
+        }
+
+        public String getAccessToken() {
+            return accessToken;
+        }
+
+        public void setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+        }
+    }
+
+    public static class Imdb {
         private String apiUrl = "https://api.themoviedb.org/3";
         private String accessToken;
 

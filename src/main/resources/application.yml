@@ -20,18 +20,17 @@ mongodb:
   database: melian_movies
 
 # src/main/resources/application.yml
-mcp:
-  server:
-    port: 3000
-    host: localhost
-    http:
-      enabled: true
-
-tmdb:
-  api-url: https://api.themoviedb.org/3
-  access-token: eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y
 
 melian:
+  mcp:
+    server:
+      port: 3000
+      host: localhost
+      http:
+        enabled: true
+  tmdb:
+    api-url: https://api.themoviedb.org/3
+    access-token: eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDciMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y
   search:
     locale: en
 

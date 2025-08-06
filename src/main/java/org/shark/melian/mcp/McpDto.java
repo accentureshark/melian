@@ -128,7 +128,22 @@ public class McpDto {
     @Data
     @Builder
     public static class LoggingCapability {
-        // Empty for now
+        @JsonProperty("enabled")
+        private boolean enabled;
+
+        public LoggingCapability() {}
+
+        public LoggingCapability(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
     }
 
     @Data

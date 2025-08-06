@@ -200,7 +200,8 @@ public class PureMcpServer {
 
         try {
             Map<String, Object> params = (Map<String, Object>) request.get("parameters");
-            String query = params.containsKey("query") ? params.get("query").toString() : "";
+            String rawQuery = params.containsKey("query") ? params.get("query").toString() : "";
+            String query = rawQuery.trim().replaceAll("\\s+", " ");
             int limit = params.containsKey("limit") ? Integer.parseInt(params.get("limit").toString()) : 10;
 
             log.info("[PureMcpServer] Buscando películas con query='{}', limit={}", query, limit);

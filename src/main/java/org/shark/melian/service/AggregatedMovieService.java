@@ -49,7 +49,8 @@ public class AggregatedMovieService {
      * Search movies from TMDB API and store in all available databases
      */
     public List<MovieResult> searchMovies(String query, int limit) {
-        log.info("Searching movies with query: '{}', limit: {}", query, limit);
+        String cleanedQuery = query != null ? query.trim().replaceAll("\\s+", " ") : "";
+        log.info("Searching movies with query: '{}', limit: {}", cleanedQuery, limit);
 
         List<CompletableFuture<List<MovieResult>>> futures = new ArrayList<>();
 
@@ -57,7 +58,7 @@ public class AggregatedMovieService {
         if (tmdbService != null) {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<MovieResult> movies = tmdbService.search(query, limit);
+                    List<MovieResult> movies = tmdbService.search(cleanedQuery, limit);
                     log.info("Found {} movies from TMDB", movies.size());
                     return movies;
                 } catch (Exception e) {
@@ -71,7 +72,7 @@ public class AggregatedMovieService {
         if (sqlService != null) {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<MovieResult> movies = sqlService.search(query, limit);
+                    List<MovieResult> movies = sqlService.search(cleanedQuery, limit);
                     log.info("Found {} movies from SQL", movies.size());
                     return movies;
                 } catch (Exception e) {
@@ -85,7 +86,7 @@ public class AggregatedMovieService {
         mongoService.ifPresent(service -> {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<MovieResult> movies = service.search(query, limit);
+                    List<MovieResult> movies = service.search(cleanedQuery, limit);
                     log.info("Found {} movies from MongoDB", movies.size());
                     return movies;
                 } catch (Exception e) {

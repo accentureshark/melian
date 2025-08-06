@@ -20,7 +20,8 @@ public class TMDBService {
     private final TMDBApiClientPure tmdbApiClient;
 
     public List<MovieResult> search(String title, int limit) {
-        log.info("[TMDBService] Searching for movies with title: {} (limit: {})", title, limit);
-        return tmdbApiClient.searchMovies(title, limit);
+        String cleanedTitle = title != null ? title.trim().replaceAll("\\s+", " ") : "";
+        log.info("[TMDBService] Searching for movies with title: {} (limit: {})", cleanedTitle, limit);
+        return tmdbApiClient.searchMovies(cleanedTitle, limit);
     }
 }

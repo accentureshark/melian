@@ -93,10 +93,10 @@ public class MongoMovieChunkService implements MovieChunkService {
 
     @Override
     public List<MovieResult> search(String query, int limit) {
-        log.info("[MongoMovieChunkService] Searching local MongoDB for movies with title LIKE: {} (limit: {})", query, limit);
+        String cleanedQuery = query != null ? query.trim().replaceAll("\\s+", " ") : "";
+        log.info("[MongoMovieChunkService] Searching local MongoDB for movies with title LIKE: {} (limit: {})", cleanedQuery, limit);
 
         Pageable pageable = PageRequest.of(0, limit);
-        String cleanedQuery = query.trim().replaceAll("\\s+", " ");
 
         List<MovieDocument> movies = movieDocumentRepository.searchByTitle(cleanedQuery, pageable, searchLocale);
 

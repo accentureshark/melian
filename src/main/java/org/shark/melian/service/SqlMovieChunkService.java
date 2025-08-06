@@ -88,10 +88,11 @@ public class SqlMovieChunkService implements MovieChunkService {
     @Override
     @Transactional(readOnly = true)
     public List<MovieResult> search(String query, int limit) {
-        log.info("[SqlMovieChunkService] Searching local DB for movies with title LIKE: {} (limit: {})", query, limit);
+        String cleanedQuery = query != null ? query.trim().replaceAll("\\s+", " ") : "";
+        log.info("[SqlMovieChunkService] Searching local DB for movies with title LIKE: {} (limit: {})", cleanedQuery, limit);
 
         Pageable pageable = PageRequest.of(0, limit);
-        List<Movie> movies = movieRepository.searchByTitle(query, pageable);
+        List<Movie> movies = movieRepository.searchByTitle(cleanedQuery, pageable);
 
         return movies.stream()
                 .map(movie -> new MovieResult(

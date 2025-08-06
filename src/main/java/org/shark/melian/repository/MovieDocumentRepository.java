@@ -36,9 +36,9 @@ public interface MovieDocumentRepository extends MongoRepository<MovieDocument, 
  * Interfaz para métodos personalizados
  */
 interface CustomMovieDocumentRepository {
-    List<MovieDocument> searchByTitle(String query, Pageable pageable);
-    List<MovieDocument> searchByTitleExact(String exactTitle);
-    List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable);
+    List<MovieDocument> searchByTitle(String query, Pageable pageable, String locale);
+    List<MovieDocument> searchByTitleExact(String exactTitle, String locale);
+    List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable, String locale);
 }
 
 /**
@@ -52,7 +52,7 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
     private MongoTemplate mongoTemplate;
 
     @Override
-    public List<MovieDocument> searchByTitle(String query, Pageable pageable) {
+    public List<MovieDocument> searchByTitle(String query, Pageable pageable, String locale) {
         query = query.trim().replaceAll("\\s+", " ");
         String normalizedQuery = Normalizer.normalize(query, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         log.info("Buscando películas con título que contenga: '{}'", normalizedQuery);
@@ -74,7 +74,7 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
                     .regex(Pattern.compile(".*" + quotedQuery + ".*", Pattern.CASE_INSENSITIVE)));
         }
 
-        mongoQuery.with(pageable).collation(Collation.of("en").strength(1));
+        mongoQuery.with(pageable).collation(Collation.of(locale).strength(1));
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
         log.info("Encontradas {} películas para consulta: '{}'", results.size(), normalizedQuery);
 
@@ -82,7 +82,7 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
     }
 
     @Override
-    public List<MovieDocument> searchByTitleExact(String exactTitle) {
+    public List<MovieDocument> searchByTitleExact(String exactTitle, String locale) {
         exactTitle = exactTitle.trim();
         log.info("Buscando películas con título exacto: '{}'", exactTitle);
 
@@ -91,7 +91,7 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
                 Criteria.where("title").is(exactTitle),
                 Criteria.where("orig_title").is(exactTitle)
         ));
-        mongoQuery.collation(Collation.of("en").strength(1));
+        mongoQuery.collation(Collation.of(locale).strength(1));
 
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
         log.info("Encontradas {} películas con título exacto: '{}'", results.size(), exactTitle);
@@ -100,7 +100,7 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
     }
 
     @Override
-    public List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable) {
+    public List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable, String locale) {
         query = query.trim().replaceAll("\\s+", " ");
         String normalizedQuery = Normalizer.normalize(query, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         log.info("Realizando búsqueda fuzzy para: '{}'", normalizedQuery);
@@ -114,7 +114,7 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
         );
 
         Query mongoQuery = new Query(criteria);
-        mongoQuery.with(pageable).collation(Collation.of("en").strength(1));
+        mongoQuery.with(pageable).collation(Collation.of(locale).strength(1));
 
         List<MovieDocument> results = mongoTemplate.find(mongoQuery, MovieDocument.class);
         log.info("Encontradas {} películas en búsqueda fuzzy para: '{}'", results.size(), normalizedQuery);

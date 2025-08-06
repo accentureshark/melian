@@ -6,6 +6,7 @@ import org.shark.melian.document.MovieDocument;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.repository.MovieDocumentRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,9 @@ public class MongoMovieChunkService implements MovieChunkService {
 
     private final MovieDocumentRepository movieDocumentRepository;
     private final TMDBService tmdbService;
+
+    @Value("${melian.search.locale:en}")
+    private String searchLocale;
 
     @Override
     public void storeMovies(List<MovieResult> movies) {
@@ -94,14 +98,14 @@ public class MongoMovieChunkService implements MovieChunkService {
         Pageable pageable = PageRequest.of(0, limit);
         String cleanedQuery = query.trim().replaceAll("\\s+", " ");
 
-        List<MovieDocument> movies = movieDocumentRepository.searchByTitle(cleanedQuery, pageable);
+        List<MovieDocument> movies = movieDocumentRepository.searchByTitle(cleanedQuery, pageable, searchLocale);
 
         if (movies.isEmpty()) {
-            movies = movieDocumentRepository.searchByTitleFuzzy(cleanedQuery, pageable);
+            movies = movieDocumentRepository.searchByTitleFuzzy(cleanedQuery, pageable, searchLocale);
         }
 
         if (movies.isEmpty()) {
-            movies = movieDocumentRepository.searchByTitleExact(cleanedQuery);
+            movies = movieDocumentRepository.searchByTitleExact(cleanedQuery, searchLocale);
         }
 
         return movies.stream()

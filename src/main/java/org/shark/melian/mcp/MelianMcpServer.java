@@ -10,8 +10,8 @@ import org.shark.melian.service.AggregatedMovieService;
 import org.springframework.stereotype.Component;
 
 /**
- * Spring MCP Server implementation using Spring best practices.
- * Follows the Model Context Protocol specification for movie data access.
+ * Implementación Spring del servidor MCP.
+ * Sigue la especificación Model Context Protocol para acceso a datos de películas.
  */
 @Component
 @RequiredArgsConstructor

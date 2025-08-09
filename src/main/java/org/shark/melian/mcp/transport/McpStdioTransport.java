@@ -109,13 +109,13 @@ public class McpStdioTransport {
     }
 
     private Object handleMcpRequest(McpDto.JsonRpcRequest request) throws Exception {
-        log.debug("Entrando a handleMcpRequest con request: {}", request);
+        log.debug("Entering handleMcpRequest with request: {}", request);
 
         String method = request.getMethod();
         Object params = request.getParams();
 
-        log.info("Procesando método MCP: {}", method);
-        log.debug("Parámetros recibidos: {}", params);
+        log.info("Processing MCP method: {}", method);
+        log.debug("Received parameters: {}", params);
 
         try {
             Object result;
@@ -148,13 +148,13 @@ public class McpStdioTransport {
                     break;
 
                 default:
-                    log.warn("Método desconocido: {}", method);
+                    log.warn("Unknown method: {}", method);
                     throw new IllegalArgumentException("Unknown method: " + method);
             }
-            log.debug("Resultado para método {}: {}", method, result);
+            log.debug("Result for method {}: {}", method, result);
             return result;
         } catch (Exception e) {
-            log.error("Error al procesar el método MCP: {}", method, e);
+            log.error("Error processing MCP method: {}", method, e);
             throw e;
         }
     }

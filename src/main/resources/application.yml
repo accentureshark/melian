@@ -2,18 +2,22 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    url: jdbc:mysql://localhost:3307/sakila
-    username: sakila
-    password: sakila
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
-    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
   data:
     mongodb:
-      uri: mongodb://root:example@localhost:27017/melian_movies?authSource=admin
+      uri: mongodb://localhost:27017/melian_movies
+      auto-index-creation: false
 
 melian:
   mcp:

@@ -7,12 +7,14 @@ import lombok.Value;
 import org.shark.melian.mcp.McpDto;
 import org.shark.melian.mcp.McpService;
 import org.shark.melian.mcp.PureMcpServer;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,11 +24,11 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/mcp")
+
 public class McpController {
 
     private final McpService mcpService;
 
-    @Value("${mcp.swagger.helpers.enabled:true}")
     private boolean helpersEnabled;
 
     public McpController(McpService mcpService) {
@@ -37,7 +39,7 @@ public class McpController {
     @PostMapping
     public McpDto.JsonRpcResponse handle(@RequestBody JsonNode request) {
         Object id = extractId(request.get("id"));
-        McpDto.JsonRpcResponse.McpDto.JsonRpcResponseBuilder builder = McpDto.JsonRpcResponse.builder()
+        McpDto.JsonRpcResponse.JsonRpcResponseBuilder builder = McpDto.JsonRpcResponse.builder()
                 .jsonrpc("2.0")
                 .id(id);
 

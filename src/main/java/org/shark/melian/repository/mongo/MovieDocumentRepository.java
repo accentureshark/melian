@@ -60,6 +60,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
 
     @Override
     public List<MovieDocument> searchByTitle(String query, Pageable pageable, String locale) {
+        if (mongoTemplate == null) {
+            log.warn("MongoTemplate not available, returning empty results");
+            return List.of();
+        }
+        
         String normalizedQuery = normalizeQuery(query);
         if (normalizedQuery.isEmpty()) {
             return List.of();
@@ -87,6 +92,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
 
     @Override
     public List<MovieDocument> searchByTitleExact(String exactTitle, String locale) {
+        if (mongoTemplate == null) {
+            log.warn("MongoTemplate not available, returning empty results");
+            return List.of();
+        }
+        
         exactTitle = exactTitle.trim();
         log.info("Buscando películas con título exacto: '{}'", exactTitle);
 
@@ -105,6 +115,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
 
     @Override
     public List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable, String locale) {
+        if (mongoTemplate == null) {
+            log.warn("MongoTemplate not available, returning empty results");
+            return List.of();
+        }
+        
         String normalizedQuery = normalizeQuery(query);
         if (normalizedQuery.isEmpty()) {
             return List.of();

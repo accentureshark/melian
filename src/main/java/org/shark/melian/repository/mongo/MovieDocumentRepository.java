@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
  * Spring Data MongoDB Repository para MovieDocument con métodos mejorados de búsqueda.
  */
 @Repository
+@Slf4j
 public interface MovieDocumentRepository extends MongoRepository<MovieDocument, String>, CustomMovieDocumentRepository {
 
     Optional<MovieDocument> findByTitle(String title);

@@ -386,4 +386,185 @@ public class PureMcpServer {
                 .timestamp(Instant.now().toString())
                 .build();
     }
+
+    // New MCP Protocol Methods
+
+    public McpDto.PingResult ping(McpDto.PingRequest request) {
+        log.info("[PureMcpServer] Handling ping request");
+        return McpDto.PingResult.builder()
+                .status("OK")
+                .timestamp(Instant.now().toString())
+                .build();
+    }
+
+    public McpDto.PromptsListResult listPrompts(McpDto.PromptsListRequest request) {
+        log.info("[PureMcpServer] Listing available prompts");
+        
+        List<McpDto.Prompt> prompts = Arrays.asList(
+                McpDto.Prompt.builder()
+                        .name("movie_search_prompt")
+                        .description("Generate a search query for movies")
+                        .arguments(createMovieSearchPromptSchema())
+                        .build(),
+                McpDto.Prompt.builder()
+                        .name("movie_analysis_prompt")
+                        .description("Analyze movie data and provide insights")
+                        .arguments(createMovieAnalysisPromptSchema())
+                        .build()
+        );
+        
+        return McpDto.PromptsListResult.builder()
+                .prompts(prompts)
+                .nextCursor(null) // No pagination for now
+                .build();
+    }
+
+    public McpDto.PromptsGetResult getPrompt(McpDto.PromptsGetRequest request) {
+        log.info("[PureMcpServer] Getting prompt: {}", request.getName());
+        
+        switch (request.getName()) {
+            case "movie_search_prompt":
+                return McpDto.PromptsGetResult.builder()
+                        .description("Generate a search query for movies")
+                        .messages(List.of(
+                                McpDto.PromptMessage.builder()
+                                        .role("user")
+                                        .content(McpDto.PromptContent.builder()
+                                                .type("text")
+                                                .text("Search for movies about: " + request.getArguments().get("topic"))
+                                                .build())
+                                        .build()
+                        ))
+                        .build();
+                        
+            case "movie_analysis_prompt":
+                return McpDto.PromptsGetResult.builder()
+                        .description("Analyze movie data and provide insights")
+                        .messages(List.of(
+                                McpDto.PromptMessage.builder()
+                                        .role("system")
+                                        .content(McpDto.PromptContent.builder()
+                                                .type("text")
+                                                .text("Analyze the following movie data and provide insights about trends, ratings, and patterns:")
+                                                .build())
+                                        .build()
+                        ))
+                        .build();
+                        
+            default:
+                throw new IllegalArgumentException("Unknown prompt: " + request.getName());
+        }
+    }
+
+    public McpDto.ResourceTemplatesListResult listResourceTemplates(McpDto.ResourceTemplatesListRequest request) {
+        log.info("[PureMcpServer] Listing resource templates");
+        
+        List<McpDto.ResourceTemplate> templates = Arrays.asList(
+                McpDto.ResourceTemplate.builder()
+                        .uriTemplate("melian://movies/{source}")
+                        .name("Movies by Source")
+                        .description("Get movies from specific source (sql, mongo, tmdb)")
+                        .mimeType("application/json")
+                        .build(),
+                McpDto.ResourceTemplate.builder()
+                        .uriTemplate("melian://movies/search/{query}")
+                        .name("Movie Search")
+                        .description("Search movies by query")
+                        .mimeType("application/json")
+                        .build()
+        );
+        
+        return McpDto.ResourceTemplatesListResult.builder()
+                .resourceTemplates(templates)
+                .nextCursor(null)
+                .build();
+    }
+
+    public McpDto.ResourcesSubscribeResult subscribeToResource(McpDto.ResourcesSubscribeRequest request) {
+        log.info("[PureMcpServer] Subscribing to resource: {}", request.getUri());
+        // For now, just log the subscription - in a real implementation you'd store the subscription
+        return McpDto.ResourcesSubscribeResult.builder().build();
+    }
+
+    public McpDto.SetLoggingLevelResult setLoggingLevel(McpDto.SetLoggingLevelRequest request) {
+        log.info("[PureMcpServer] Setting logging level to: {}", request.getLevel());
+        // In a real implementation, you'd update the logging configuration
+        return McpDto.SetLoggingLevelResult.builder().build();
+    }
+
+    public McpDto.CompletionResult complete(McpDto.CompletionRequest request) {
+        log.info("[PureMcpServer] Handling completion request for: {} {}", 
+                request.getRef().getType(), request.getRef().getName());
+        
+        List<McpDto.CompletionOption> options = new ArrayList<>();
+        
+        if ("resource".equals(request.getRef().getType())) {
+            options.addAll(Arrays.asList(
+                    McpDto.CompletionOption.builder()
+                            .value("melian://movies/sql")
+                            .label("SQL Movies")
+                            .description("Movies from SQL database")
+                            .build(),
+                    McpDto.CompletionOption.builder()
+                            .value("melian://movies/mongo") 
+                            .label("MongoDB Movies")
+                            .description("Movies from MongoDB")
+                            .build(),
+                    McpDto.CompletionOption.builder()
+                            .value("melian://movies/tmdb")
+                            .label("TMDB Movies")
+                            .description("Movies from TMDB API")
+                            .build()
+            ));
+        } else if ("argument".equals(request.getRef().getType())) {
+            // Provide argument completions based on the tool
+            if ("search_movies".equals(request.getRef().getName())) {
+                options.addAll(Arrays.asList(
+                        McpDto.CompletionOption.builder()
+                                .value("action")
+                                .label("Action Movies")
+                                .description("Search for action movies")
+                                .build(),
+                        McpDto.CompletionOption.builder()
+                                .value("comedy")
+                                .label("Comedy Movies")
+                                .description("Search for comedy movies")
+                                .build(),
+                        McpDto.CompletionOption.builder()
+                                .value("drama")
+                                .label("Drama Movies")
+                                .description("Search for drama movies")
+                                .build()
+                ));
+            }
+        }
+        
+        return McpDto.CompletionResult.builder()
+                .completion(options)
+                .build();
+    }
+
+    // Helper methods for prompt schemas
+    private Object createMovieSearchPromptSchema() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> topicProp = new HashMap<>();
+        topicProp.put("type", "string");
+        topicProp.put("description", "Topic to search movies about");
+        properties.put("topic", topicProp);
+        
+        schema.put("properties", properties);
+        schema.put("required", List.of("topic"));
+        return schema;
+    }
+
+    private Object createMovieAnalysisPromptSchema() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", new HashMap<>());
+        schema.put("description", "No arguments required for movie analysis");
+        return schema;
+    }
 }

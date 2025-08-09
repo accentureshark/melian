@@ -79,6 +79,34 @@ public class McpController {
                 McpDto.ReadResourceRequest readReq = objectMapper.convertValue(params, McpDto.ReadResourceRequest.class);
                 return mcpServer.readResource(readReq);
             }
+            case "ping": {
+                McpDto.PingRequest pingReq = objectMapper.convertValue(params, McpDto.PingRequest.class);
+                return mcpServer.ping(pingReq);
+            }
+            case "prompts/list": {
+                McpDto.PromptsListRequest promptsReq = objectMapper.convertValue(params, McpDto.PromptsListRequest.class);
+                return mcpServer.listPrompts(promptsReq);
+            }
+            case "prompts/get": {
+                McpDto.PromptsGetRequest promptReq = objectMapper.convertValue(params, McpDto.PromptsGetRequest.class);
+                return mcpServer.getPrompt(promptReq);
+            }
+            case "resources/templates/list": {
+                McpDto.ResourceTemplatesListRequest templatesReq = objectMapper.convertValue(params, McpDto.ResourceTemplatesListRequest.class);
+                return mcpServer.listResourceTemplates(templatesReq);
+            }
+            case "resources/subscribe": {
+                McpDto.ResourcesSubscribeRequest subscribeReq = objectMapper.convertValue(params, McpDto.ResourcesSubscribeRequest.class);
+                return mcpServer.subscribeToResource(subscribeReq);
+            }
+            case "logging/setLevel": {
+                McpDto.SetLoggingLevelRequest loggingReq = objectMapper.convertValue(params, McpDto.SetLoggingLevelRequest.class);
+                return mcpServer.setLoggingLevel(loggingReq);
+            }
+            case "completion/complete": {
+                McpDto.CompletionRequest completionReq = objectMapper.convertValue(params, McpDto.CompletionRequest.class);
+                return mcpServer.complete(completionReq);
+            }
             default:
                 throw new IllegalArgumentException("Unknown method: " + method);
         }

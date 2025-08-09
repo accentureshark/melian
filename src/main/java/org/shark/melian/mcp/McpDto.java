@@ -251,4 +251,203 @@ public class McpDto {
         private Map<String, Object> details;
         private String timestamp;
     }
+
+    // Ping request/response
+    @Data
+    @Builder
+    public static class PingRequest {
+        // Empty for now - ping has no parameters
+    }
+
+    @Data
+    @Builder
+    public static class PingResult {
+        @Builder.Default
+        private String status = "OK";
+        private String timestamp;
+    }
+
+    // Prompts DTOs
+    @Data
+    @Builder
+    public static class PromptsListRequest {
+        private String cursor;
+    }
+
+    @Data
+    @Builder
+    public static class PromptsListResult {
+        private List<Prompt> prompts;
+        private String nextCursor;
+    }
+
+    @Data
+    @Builder
+    public static class Prompt {
+        private String name;
+        private String description;
+        private Object arguments;
+    }
+
+    @Data
+    @Builder
+    public static class PromptsGetRequest {
+        private String name;
+        private Map<String, Object> arguments;
+    }
+
+    @Data
+    @Builder
+    public static class PromptsGetResult {
+        private String description;
+        private List<PromptMessage> messages;
+    }
+
+    @Data
+    @Builder
+    public static class PromptMessage {
+        private String role;
+        private PromptContent content;
+    }
+
+    @Data
+    @Builder
+    public static class PromptContent {
+        private String type;
+        private String text;
+    }
+
+    // Logging DTOs
+    @Data
+    @Builder
+    public static class SetLoggingLevelRequest {
+        private String level;
+    }
+
+    @Data
+    @Builder
+    public static class SetLoggingLevelResult {
+        // Empty result
+    }
+
+    @Data
+    @Builder
+    public static class LoggingMessageNotification {
+        private String level;
+        private String message;
+        private Object data;
+        private String timestamp;
+    }
+
+    // Completion DTOs
+    @Data
+    @Builder
+    public static class CompletionRequest {
+        private CompletionRef ref;
+        private String argument;
+    }
+
+    @Data
+    @Builder
+    public static class CompletionRef {
+        private String type;
+        private String name;
+    }
+
+    @Data
+    @Builder
+    public static class CompletionResult {
+        private List<CompletionOption> completion;
+    }
+
+    @Data
+    @Builder
+    public static class CompletionOption {
+        private String value;
+        private String label;
+        private String description;
+    }
+
+    // Resource templates DTOs
+    @Data
+    @Builder
+    public static class ResourceTemplatesListRequest {
+        private String cursor;
+    }
+
+    @Data
+    @Builder
+    public static class ResourceTemplatesListResult {
+        private List<ResourceTemplate> resourceTemplates;
+        private String nextCursor;
+    }
+
+    @Data
+    @Builder
+    public static class ResourceTemplate {
+        private String uriTemplate;
+        private String name;
+        private String description;
+        private String mimeType;
+    }
+
+    // Resources subscribe DTOs
+    @Data
+    @Builder
+    public static class ResourcesSubscribeRequest {
+        private String uri;
+    }
+
+    @Data
+    @Builder
+    public static class ResourcesSubscribeResult {
+        // Empty result
+    }
+
+    // Notification DTOs
+    @Data
+    @Builder
+    public static class Notification {
+        private String method;
+        private Object params;
+    }
+
+    @Data
+    @Builder
+    public static class ProgressNotification {
+        private String progressToken;
+        private String progress;
+        private String total;
+    }
+
+    @Data
+    @Builder
+    public static class CancelledNotification {
+        private String requestId;
+        private String reason;
+    }
+
+    @Data
+    @Builder
+    public static class ResourcesUpdatedNotification {
+        private String uri;
+    }
+
+    @Data
+    @Builder
+    public static class ResourcesListChangedNotification {
+        // Empty - indicates resource list has changed
+    }
+
+    @Data
+    @Builder
+    public static class PromptsListChangedNotification {
+        // Empty - indicates prompts list has changed
+    }
+
+    @Data
+    @Builder
+    public static class ToolsListChangedNotification {
+        // Empty - indicates tools list has changed
+    }
 }

@@ -1,36 +1,14 @@
 spring:
   main:
     allow-bean-definition-overriding: true
-  datasource:
-    url: jdbc:mysql://localhost:3307/sakila
-    username: sakila
-    password: sakila
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    database-platform: org.hibernate.dialect.MySQLDialect
-  data:
-    mongodb:
-      uri: mongodb://root:example@localhost:27017/melian_movies?authSource=admin
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
 
-melian:
-  mcp:
-    server:
-      port: 3000
-      host: localhost
-      http:
-        enabled: true
-  tmdb:
-    api-url: https://api.themoviedb.org/3
-    access-token: eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkYzEzOThhZDdiMTY4ZjM2ZGJkMGIzYTZmYTYzOThhYSIsIm5iZiI6MTc0OTkzNDEyNi4xNDgsInN1YiI6IjY4NGRlMDJlYzgzZWJlNzgxOWJiNGU1YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oI0cWBV3BQmfGNqjh27YLAqNuZK2gIQW-wkYeamNv5Y
-  search:
-    locale: en
-
-logging:
-  level:
-    com.zaxxer.hikari: INFO
-    org.hibernate.SQL: DEBUG
-    org.springframework.data.mongodb: DEBUG
-    org.shark.melian.repository.CustomMovieDocumentRepositoryImpl: DEBUG
+mcp:
+  swagger:
+    helpers:
+      enabled: true

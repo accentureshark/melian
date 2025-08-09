@@ -1,10 +1,11 @@
-package org.shark.melian.mcp;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.shark.melian.mcp.McpDto;
+import org.shark.melian.mcp.PureMcpServer;
 import org.shark.melian.service.TMDBService;
 import org.shark.melian.service.AggregatedMovieService;
 import org.shark.melian.model.MovieResult;
@@ -19,9 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Unit tests for PureMcpServer
- */
 @ExtendWith(MockitoExtension.class)
 class PureMcpServerTest {
 
@@ -40,7 +38,6 @@ class PureMcpServerTest {
 
     @Test
     void testInitialize() {
-        // Given
         McpDto.InitializeRequest request = McpDto.InitializeRequest.builder()
                 .protocolVersion("2024-11-05")
                 .clientInfo(McpDto.ClientInfo.builder()
@@ -49,10 +46,8 @@ class PureMcpServerTest {
                         .build())
                 .build();
 
-        // When
         McpDto.InitializeResult result = mcpServer.initialize(request);
 
-        // Then
         assertNotNull(result);
         assertEquals("2024-11-05", result.getProtocolVersion());
         assertEquals("melian-movie-server", result.getServerInfo().getName());
@@ -64,18 +59,16 @@ class PureMcpServerTest {
 
     @Test
     void testListTools() {
-        // When
         McpDto.ToolsListResult result = mcpServer.listTools();
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getTools());
         assertEquals(3, result.getTools().size());
-        
+
         List<String> toolNames = result.getTools().stream()
                 .map(McpDto.Tool::getName)
                 .toList();
-        
+
         assertTrue(toolNames.contains("search_movies"));
         assertTrue(toolNames.contains("get_movie_chunks"));
         assertTrue(toolNames.contains("get_server_status"));
@@ -83,7 +76,6 @@ class PureMcpServerTest {
 
     @Test
     void testCallSearchMoviesTool() {
-        // Given
         List<MovieResult> mockResults = Arrays.asList(
                 new MovieResult("The Matrix", "Description", "1999", 8.7),
                 new MovieResult("Matrix Reloaded", "Description", "2003", 7.2)
@@ -99,10 +91,8 @@ class PureMcpServerTest {
                 .arguments(arguments)
                 .build();
 
-        // When
         McpDto.CallToolResult result = mcpServer.callTool(request);
 
-        // Then
         assertNotNull(result);
         assertFalse(result.isError());
         assertEquals(1, result.getContent().size());
@@ -113,7 +103,6 @@ class PureMcpServerTest {
 
     @Test
     void testCallGetMovieChunksTool() {
-        // Given
         List<ChunkDto> mockChunks = Arrays.asList(
                 new ChunkDto("1", "Movie chunk 1", Map.of("source", "sql")),
                 new ChunkDto("2", "Movie chunk 2", Map.of("source", "sql"))
@@ -130,10 +119,8 @@ class PureMcpServerTest {
                 .arguments(arguments)
                 .build();
 
-        // When
         McpDto.CallToolResult result = mcpServer.callTool(request);
 
-        // Then
         assertNotNull(result);
         assertFalse(result.isError());
         assertEquals(1, result.getContent().size());
@@ -145,7 +132,6 @@ class PureMcpServerTest {
 
     @Test
     void testCallGetServerStatusTool() {
-        // Given
         Map<String, Object> arguments = new HashMap<>();
 
         McpDto.CallToolRequest request = McpDto.CallToolRequest.builder()
@@ -153,10 +139,8 @@ class PureMcpServerTest {
                 .arguments(arguments)
                 .build();
 
-        // When
         McpDto.CallToolResult result = mcpServer.callTool(request);
 
-        // Then
         assertNotNull(result);
         assertFalse(result.isError());
         assertEquals(1, result.getContent().size());
@@ -166,7 +150,6 @@ class PureMcpServerTest {
 
     @Test
     void testCallUnknownTool() {
-        // Given
         Map<String, Object> arguments = new HashMap<>();
 
         McpDto.CallToolRequest request = McpDto.CallToolRequest.builder()
@@ -174,10 +157,8 @@ class PureMcpServerTest {
                 .arguments(arguments)
                 .build();
 
-        // When
         McpDto.CallToolResult result = mcpServer.callTool(request);
 
-        // Then
         assertNotNull(result);
         assertTrue(result.isError());
         assertEquals(1, result.getContent().size());
@@ -186,10 +167,8 @@ class PureMcpServerTest {
 
     @Test
     void testListResources() {
-        // When
         McpDto.ResourcesListResult result = mcpServer.listResources();
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getResources());
         assertEquals(3, result.getResources().size());
@@ -205,10 +184,8 @@ class PureMcpServerTest {
 
     @Test
     void testGetHealth() {
-        // When
         McpDto.HealthStatus health = mcpServer.getHealth();
 
-        // Then
         assertNotNull(health);
         assertEquals("OK", health.getStatus());
         assertNotNull(health.getDetails());
@@ -220,7 +197,6 @@ class PureMcpServerTest {
 
     @Test
     void testSearchMoviesWithMissingQuery() {
-        // Given
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("limit", 10);
 
@@ -229,10 +205,8 @@ class PureMcpServerTest {
                 .arguments(arguments)
                 .build();
 
-        // When
         McpDto.CallToolResult result = mcpServer.callTool(request);
 
-        // Then
         assertNotNull(result);
         assertTrue(result.isError());
         assertEquals(1, result.getContent().size());

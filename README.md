@@ -17,7 +17,25 @@ No es solo un software: es un *personaje* que entiende, transforma y sirve conoc
 MELIAN se implementa como un **MCP Server** (Model Content Protocol), capaz de conectarse a bases de datos, archivos, APIs, documentos, planillas y sistemas legacy,  
 y exponer chunks enriquecidos, embeddings y metadata lista para potenciar aplicaciones RAG y clientes de IA como [EvolvAI](https://github.com/tu-org/evolvai).
 
+## MCP compliance
 
+Melian expone un único endpoint **POST `/mcp`** que implementa [JSON-RPC 2.0](https://www.jsonrpc.org/specification). Todas las respuestas utilizan **HTTP 200**; los errores se entregan dentro del cuerpo como objeto `error` de JSON-RPC.
+
+Flujo básico de llamadas:
+
+1. `initialize` – negocia la versión del protocolo y devuelve capacidades del servidor.
+2. `tools/list` – lista las herramientas disponibles.
+3. `ping` – valida conectividad (requiere haber inicializado previamente).
+
+Ejemplos:
+
+```bash
+curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"protocolVersion":"2024-11-05"}}'
+curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"2","method":"tools/list","params":{"cursor":null,"limit":100}}'
+curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"3","method":"ping","params":{}}'
+```
+
+Para facilitar estas pruebas existe el script [`scripts/mcp_smoke.sh`](scripts/mcp_smoke.sh).
 
 ## ¿Qué es el Protocolo MCP?
 

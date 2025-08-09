@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
  * Spring Data MongoDB Repository para MovieDocument con métodos mejorados de búsqueda.
  */
 @Repository
+@Slf4j
 public interface MovieDocumentRepository extends MongoRepository<MovieDocument, String>, CustomMovieDocumentRepository {
 
     Optional<MovieDocument> findByTitle(String title);
@@ -60,6 +61,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
 
     @Override
     public List<MovieDocument> searchByTitle(String query, Pageable pageable, String locale) {
+        if (mongoTemplate == null) {
+            log.warn("MongoTemplate not available, returning empty results");
+            return List.of();
+        }
+        
         String normalizedQuery = normalizeQuery(query);
         if (normalizedQuery.isEmpty()) {
             return List.of();
@@ -87,6 +93,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
 
     @Override
     public List<MovieDocument> searchByTitleExact(String exactTitle, String locale) {
+        if (mongoTemplate == null) {
+            log.warn("MongoTemplate not available, returning empty results");
+            return List.of();
+        }
+        
         exactTitle = exactTitle.trim();
         log.info("Buscando películas con título exacto: '{}'", exactTitle);
 
@@ -105,6 +116,11 @@ class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository
 
     @Override
     public List<MovieDocument> searchByTitleFuzzy(String query, Pageable pageable, String locale) {
+        if (mongoTemplate == null) {
+            log.warn("MongoTemplate not available, returning empty results");
+            return List.of();
+        }
+        
         String normalizedQuery = normalizeQuery(query);
         if (normalizedQuery.isEmpty()) {
             return List.of();

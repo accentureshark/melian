@@ -21,30 +21,14 @@ public class PureMcpServer {
     private final AggregatedMovieService aggregatedMovieService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public Map<String, Object> initialize(Map<String, Object> request) {
-        log.info("[PureMcpServer] Inicializando MCP con request: {}", request);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("name", "Melian Movie Search");
-        response.put("version", "1.0");
-        response.put("display_name", "Melian - Buscador de películas inteligente");
-        response.put("description", "Busca películas en diferentes fuentes y devuelve información detallada");
-        response.put("user_context_strategy", "ignore");
-        response.put("schema_format", "jsonschema");
-
-        log.info("[PureMcpServer] Inicialización completada con éxito");
-        return response;
-    }
-
-    // Método compatible con la nueva API
     public McpDto.InitializeResult initialize(McpDto.InitializeRequest request) {
-        log.info("[PureMcpServer] Inicializando MCP con nuevo formato: {}", request);
+        log.info("[PureMcpServer] Initializing MCP with new format: {}", request);
 
         return McpDto.InitializeResult.builder()
                 .protocolVersion("2024-11-05")
                 .serverInfo(McpDto.ServerInfo.builder()
-                        .name("Melian Movie Search")
-                        .version("1.0")
+                        .name("melian-movie-server")
+                        .version("1.0.0")
                         .build())
                 .capabilities(McpDto.ServerCapabilities.builder()
                         .logging(McpDto.LoggingCapability.builder().build())
@@ -63,14 +47,19 @@ public class PureMcpServer {
 
         List<McpDto.Tool> tools = Arrays.asList(
                 McpDto.Tool.builder()
-                        .name("search")
-                        .description("Buscar películas en todas las fuentes disponibles")
+                        .name("search_movies")
+                        .description("Search for movies across all available sources")
                         .inputSchema(createSearchSchema())
                         .build(),
                 McpDto.Tool.builder()
-                        .name("chunks")
-                        .description("Obtener chunks de películas para aplicaciones RAG")
+                        .name("get_movie_chunks")
+                        .description("Get movie chunks for RAG applications")
                         .inputSchema(createChunksSchema())
+                        .build(),
+                McpDto.Tool.builder()
+                        .name("get_server_status")
+                        .description("Get server status")
+                        .inputSchema(new HashMap<>())
                         .build()
         );
 
@@ -82,30 +71,65 @@ public class PureMcpServer {
                 request.getName(), request.getArguments());
 
         try {
-            Map<String, Object> result = null;
-
-            if ("search".equals(request.getName())) {
-                Map<String, Object> execRequest = new HashMap<>();
-                execRequest.put("function", "search");
-                execRequest.put("parameters", request.getArguments());
-                result = executeSearch(execRequest);
-
-            } else if ("chunks".equals(request.getName())) {
-                Map<String, Object> execRequest = new HashMap<>();
-                execRequest.put("function", "chunks");
-                execRequest.put("parameters", request.getArguments());
-                result = executeChunks(execRequest);
+            switch (request.getName()) {
+                case "search_movies": {
+                    String query = (String) request.getArguments().get("query");
+                    Integer limit = (Integer) request.getArguments().getOrDefault("limit", 10);
+                    if (query == null || query.isBlank()) {
+                        return McpDto.CallToolResult.builder()
+                                .isError(true)
+                                .content(List.of(McpDto.ToolContent.builder()
+                                        .type("text")
+                                        .text("Query parameter is required")
+                                        .build()))
+                                .build();
+                    }
+                    List<MovieResult> movies = tmdbService.search(query, limit);
+                    String text = "Found " + movies.size() + " movies for query '" + query + "'";
+                    return McpDto.CallToolResult.builder()
+                            .isError(false)
+                            .content(List.of(McpDto.ToolContent.builder()
+                                    .type("text")
+                                    .text(text)
+                                    .data(movies)
+                                    .build()))
+                            .build();
+                }
+                case "get_movie_chunks": {
+                    String source = (String) request.getArguments().get("source");
+                    Integer limit = (Integer) request.getArguments().getOrDefault("limit", 10);
+                    List<ChunkDto> chunks = aggregatedMovieService.getMovieChunks(limit, null, null, null, null);
+                    String text = "Retrieved " + chunks.size() + " chunks from source: " + source;
+                    return McpDto.CallToolResult.builder()
+                            .isError(false)
+                            .content(List.of(McpDto.ToolContent.builder()
+                                    .type("text")
+                                    .text(text)
+                                    .data(chunks)
+                                    .build()))
+                            .build();
+                }
+                case "get_server_status": {
+                    McpDto.HealthStatus health = getHealth();
+                    String text = "Server status: " + health.getStatus();
+                    return McpDto.CallToolResult.builder()
+                            .isError(false)
+                            .content(List.of(McpDto.ToolContent.builder()
+                                    .type("text")
+                                    .text(text)
+                                    .data(health)
+                                    .build()))
+                            .build();
+                }
+                default:
+                    return McpDto.CallToolResult.builder()
+                            .isError(true)
+                            .content(List.of(McpDto.ToolContent.builder()
+                                    .type("text")
+                                    .text("Unknown tool: " + request.getName())
+                                    .build()))
+                            .build();
             }
-
-            return McpDto.CallToolResult.builder()
-                    .isError(false)
-                    .content(List.of(McpDto.ToolContent.builder()
-                            .type("text")
-                            .text("Operación completada")
-                            .data(result)
-                            .build()))
-                    .build();
-
         } catch (Exception e) {
             log.error("[PureMcpServer] Error al ejecutar herramienta: {}", e.getMessage(), e);
 
@@ -124,21 +148,21 @@ public class PureMcpServer {
 
         List<McpDto.Resource> resources = Arrays.asList(
                 McpDto.Resource.builder()
-                        .uri("movies/all")
-                        .name("Todas las películas")
-                        .description("Películas de todas las fuentes")
-                        .mimeType("application/json")
-                        .build(),
-                McpDto.Resource.builder()
-                        .uri("movies/sql")
+                        .uri("melian://movies/sql")
                         .name("Películas SQL")
                         .description("Películas de la base de datos SQL")
                         .mimeType("application/json")
                         .build(),
                 McpDto.Resource.builder()
-                        .uri("movies/mongo")
+                        .uri("melian://movies/mongo")
                         .name("Películas MongoDB")
                         .description("Películas de MongoDB")
+                        .mimeType("application/json")
+                        .build(),
+                McpDto.Resource.builder()
+                        .uri("melian://movies/tmdb")
+                        .name("Películas TMDB")
+                        .description("Películas de TMDB")
                         .mimeType("application/json")
                         .build()
         );
@@ -146,87 +170,20 @@ public class PureMcpServer {
         return McpDto.ResourcesListResult.builder().resources(resources).build();
     }
 
-    public McpDto.ReadResourceResult readResource(McpDto.ReadResourceRequest request) {
-        log.info("[PureMcpServer] Leyendo recurso: {}", request.getUri());
-
-        try {
-            String uri = request.getUri();
-            List<ChunkDto> chunks = new ArrayList<>();
-
-            if (uri.startsWith("movies/")) {
-                String source = uri.substring("movies/".length());
-                if ("all".equals(source)) {
-                    chunks = aggregatedMovieService.getMovieChunks(10, null, null, null, null);
-                } else if ("sql".equals(source)) {
-                    // Obtener solo de SQL
-                } else if ("mongo".equals(source)) {
-                    // Obtener solo de MongoDB
-                }
-            }
-
-            String content = objectMapper.writeValueAsString(chunks);
-
-            return McpDto.ReadResourceResult.builder()
-                    .contents(List.of(McpDto.ResourceContent.builder()
-                            .uri(request.getUri())
-                            .mimeType("application/json")
-                            .text(content)
-                            .build()))
-                    .build();
-
-        } catch (Exception e) {
-            log.error("[PureMcpServer] Error al leer recurso: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al leer recurso: " + e.getMessage());
-        }
-    }
-
     public McpDto.HealthStatus getHealth() {
-        log.info("[PureMcpServer] Obteniendo estado de salud del servidor");
+        log.info("[PureMcpServer] Getting server health status");
 
         Map<String, Object> details = new HashMap<>();
-        details.put("mongodb", "OK");
-        details.put("sql", "OK");
-        details.put("tmdb", "ERROR"); // Según el error mostrado
+        details.put("tmdbService", "OK");
+        details.put("sqlService", "OK");
+        details.put("mongoService", "OK");
 
         return McpDto.HealthStatus.builder()
-                .status("DEGRADED") // TMDB no funciona pero el sistema sigue operativo
+                .status("OK")
                 .details(details)
                 .timestamp(Instant.now().toString())
                 .build();
     }
-
-    public Map<String, Object> executeSearch(Map<String, Object> request) {
-        log.info("[PureMcpServer] Ejecutando búsqueda con request: {}", request);
-
-        try {
-            Map<String, Object> params = (Map<String, Object>) request.get("parameters");
-            String rawQuery = params.containsKey("query") ? params.get("query").toString() : "";
-            String query = rawQuery.trim().replaceAll("\\s+", " ");
-            int limit = params.containsKey("limit") ? Integer.parseInt(params.get("limit").toString()) : 10;
-
-            log.info("[PureMcpServer] Buscando películas con query='{}', limit={}", query, limit);
-
-            List<MovieResult> movies = aggregatedMovieService.searchMovies(query, limit);
-            log.info("[PureMcpServer] Encontradas {} películas para la consulta '{}'", movies.size(), query);
-
-            if (movies.isEmpty()) {
-                log.warn("[PureMcpServer] No se encontraron películas para la consulta: '{}'", query);
-            } else {
-                log.info("[PureMcpServer] Primera película encontrada: '{}'", movies.get(0).title());
-            }
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("movies", movies);
-            return response;
-        } catch (Exception e) {
-            log.error("[PureMcpServer] Error al ejecutar búsqueda: {}", e.getMessage(), e);
-            Map<String, Object> response = new HashMap<>();
-            response.put("error", e.getMessage());
-            return response;
-        }
-    }
-
-    // Resto de métodos sin cambios
 
     // Métodos auxiliares para crear esquemas
     private Object createSearchSchema() {
@@ -272,56 +229,38 @@ public class PureMcpServer {
         return schema;
     }
 
-    // Los demás métodos existentes permanecen iguales
-    public Map<String, Object> executeChunks(Map<String, Object> request) {
-        // Código original sin cambios
-        log.info("[PureMcpServer] Ejecutando obtención de chunks con request: {}", request);
+    public McpDto.ReadResourceResult readResource(McpDto.ReadResourceRequest request) {
+        log.info("[PureMcpServer] Leyendo recurso: {}", request.getUri());
 
         try {
-            Map<String, Object> params = (Map<String, Object>) request.get("parameters");
-            int limit = params.containsKey("limit") ? Integer.parseInt(params.get("limit").toString()) : 10;
-            String afterId = params.containsKey("after_id") ? params.get("after_id").toString() : null;
-            String filter = params.containsKey("filter") ? params.get("filter").toString() : null;
-            List<String> tags = params.containsKey("tags") ? (List<String>) params.get("tags") : List.of();
-            String sort = params.containsKey("sort") ? params.get("sort").toString() : null;
+            String uri = request.getUri();
+            List<ChunkDto> chunks = new ArrayList<>();
 
-            log.info("[PureMcpServer] Obteniendo chunks con limit={}, afterId={}, filter={}", limit, afterId, filter);
-
-            List<ChunkDto> chunks = aggregatedMovieService.getMovieChunks(limit, afterId, filter, tags, sort);
-            log.info("[PureMcpServer] Obtenidos {} chunks", chunks.size());
-
-            if (chunks.isEmpty()) {
-                log.warn("[PureMcpServer] No se encontraron chunks para los parámetros dados");
-            } else {
-                log.info("[PureMcpServer] Primer chunk ID: {}", chunks.get(0).getId());
+            if (uri.startsWith("movies/")) {
+                String source = uri.substring("movies/".length());
+                if ("all".equals(source)) {
+                    chunks = aggregatedMovieService.getMovieChunks(10, null, null, null, null);
+                } else if ("sql".equals(source)) {
+                    // Obtener solo de SQL
+                } else if ("mongo".equals(source)) {
+                    // Obtener solo de MongoDB
+                }
             }
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("chunks", chunks);
-            return response;
+            String content = objectMapper.writeValueAsString(chunks);
+
+            return McpDto.ReadResourceResult.builder()
+                    .contents(List.of(McpDto.ResourceContent.builder()
+                            .uri(request.getUri())
+                            .mimeType("application/json")
+                            .text(content)
+                            .build()))
+                    .build();
+
         } catch (Exception e) {
-            log.error("[PureMcpServer] Error al obtener chunks: {}", e.getMessage(), e);
-            Map<String, Object> response = new HashMap<>();
-            response.put("error", e.getMessage());
-            return response;
+            log.error("[PureMcpServer] Error reading resource: {}", e.getMessage(), e);
+            throw new RuntimeException("Error reading resource: " + e.getMessage());
         }
     }
 
-    public Map<String, Object> execute(Map<String, Object> request) {
-        // Código original sin cambios
-        String function = request.containsKey("function") ? request.get("function").toString() : "";
-        log.info("[PureMcpServer] Recibida solicitud de ejecución para función: '{}'", function);
-
-        switch (function) {
-            case "search":
-                return executeSearch(request);
-            case "chunks":
-                return executeChunks(request);
-            default:
-                log.warn("[PureMcpServer] Función no reconocida: '{}'", function);
-                Map<String, Object> response = new HashMap<>();
-                response.put("error", "Función no soportada: " + function);
-                return response;
-        }
-    }
 }

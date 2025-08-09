@@ -1,19 +1,19 @@
 #!/bin/bash
 
-echo "🚀 MELIAN MCP Server - Script de Ejecución"
+echo "🚀 MELIAN MCP Server - Execution Script"
 echo "=========================================="
 echo ""
 
-# Verificar Java
-echo "📋 Verificando requisitos..."
+# Verify Java
+echo "📋 Verifying requirements..."
 if ! command -v java &> /dev/null; then
-    echo "❌ Java no encontrado. Instalar Java 17+ primero."
+    echo "❌ Java not found. Please install Java 17+ first."
     exit 1
 fi
 
 JAVA_VERSION=$(java -version 2>&1 | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
 if [ "$JAVA_VERSION" -lt 17 ]; then
-    echo "❌ Java $JAVA_VERSION encontrado. Se requiere Java 17+."
+    echo "❌ Found Java $JAVA_VERSION. Java 17+ is required."
     exit 1
 fi
 
@@ -22,71 +22,71 @@ echo "✅ Java $JAVA_VERSION OK"
 # Verificar JAR
 JAR_FILE="target/melian-0.1.0-SNAPSHOT.jar"
 if [ ! -f "$JAR_FILE" ]; then
-    echo "❌ JAR no encontrado: $JAR_FILE"
-    echo "🔧 Compilando proyecto..."
+    echo "❌ JAR not found: $JAR_FILE"
+    echo "🔧 Building project..."
     mvn clean package -DskipTests -q
     if [ $? -ne 0 ]; then
-        echo "❌ Error al compilar el proyecto"
+        echo "❌ Error building the project"
         exit 1
     fi
-    echo "✅ Proyecto compilado exitosamente"
+    echo "✅ Project built successfully"
 else
-    echo "✅ JAR encontrado: $JAR_FILE"
+    echo "✅ JAR found: $JAR_FILE"
 fi
 
 echo ""
 
-# Verificar configuración
-echo "⚙️ Configuración actual:"
-echo "- Base de datos: ${DB_URL:-jdbc:h2:mem:melian (H2 en memoria)}"
+# Check configuration
+echo "⚙️ Current configuration:"
+echo "- Database: ${DB_URL:-jdbc:h2:mem:melian (H2 in-memory)}"
 echo "- MongoDB: ${MONGODB_URI:-mongodb://localhost:27017 (default)}"
-echo "- TMDB Token: ${TMDB_ACCESS_TOKEN:+Configurado ✅}"
+echo "- TMDB Token: ${TMDB_ACCESS_TOKEN:+Configured ✅}"
 if [ -z "$TMDB_ACCESS_TOKEN" ]; then
-    echo "- TMDB Token: ❌ No configurado (búsquedas limitadas)"
+    echo "- TMDB Token: ❌ Not configured (limited searches)"
 fi
 
 echo ""
 
-# Preguntar si quiere configurar TMDB
+# Ask if they want to configure TMDB
 if [ -z "$TMDB_ACCESS_TOKEN" ]; then
-    echo "🎬 ¿Tienes un token TMDB para búsquedas de películas? (y/N)"
+    echo "🎬 Do you have a TMDB token for movie searches? (y/N)"
     read -r response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        echo "Ingresa tu TMDB Access Token:"
+        echo "Enter your TMDB Access Token:"
         read -r tmdb_token
         export TMDB_ACCESS_TOKEN="$tmdb_token"
-        echo "✅ Token TMDB configurado"
+        echo "✅ TMDB Token configured"
     fi
 fi
 
 echo ""
 
-# Mostrar opciones
-echo "🎛️ Opciones de ejecución:"
-echo "1. Básica (H2 en memoria)"
-echo "2. Con MongoDB (requiere Docker)"
-echo "3. Con MySQL (requiere Docker)"
-echo "4. Completa (MySQL + MongoDB + Docker)"
-echo "5. HTTP SSE (exponer servidor remoto)"
+# Show options
+echo "🎛️ Execution options:"
+echo "1. Basic (H2 in-memory)"
+echo "2. With MongoDB (requires Docker)"
+echo "3. With MySQL (requires Docker)"
+echo "4. Complete (MySQL + MongoDB + Docker)"
+echo "5. HTTP SSE (expose remote server)"
 echo ""
-echo "Selecciona una opción (1-5) o presiona Enter para básica:"
+echo "Select an option (1-5) or press Enter for basic:"
 read -r option
 
 case "$option" in
     2)
-        echo "🐳 Verificando MongoDB..."
+        echo "🐳 Verifying MongoDB..."
         if ! docker ps | grep -q mongo; then
-            echo "📦 Levantando MongoDB..."
+            echo "📦 Starting MongoDB..."
             docker-compose -f mongodb-docker-compose.yml up -d
             sleep 5
         fi
         export MONGODB_URI="mongodb://root:example@localhost:27017"
-        echo "✅ MongoDB configurado"
+        echo "✅ MongoDB configured"
         ;;
     3)
-        echo "🐳 Verificando MySQL..."
+        echo "🐳 Verifying MySQL..."
         if ! docker ps | grep -q mysql; then
-            echo "📦 Levantando MySQL..."
+            echo "📦 Starting MySQL..."
             docker-compose up -d mysql-sakila
             sleep 10
         fi
@@ -94,7 +94,7 @@ case "$option" in
         export DB_USERNAME="sakila"
         export DB_PASSWORD="sakila"
         export DB_DRIVER="com.mysql.cj.jdbc.Driver"
-        echo "✅ MySQL configurado"
+        echo "✅ MySQL configured"
         ;;
     4)
         echo "🐳 Verificando bases de datos..."
@@ -123,20 +123,20 @@ case "$option" in
         export DB_DRIVER="com.mysql.cj.jdbc.Driver"
         export MONGODB_URI="mongodb://root:example@localhost:27017"
         echo "✅ MySQL y MongoDB configurados"
-        echo "🌐 Iniciando en modo HTTP SSE"
+        echo "🌐 Starting in HTTP SSE mode"
         export MCP_SERVER_HTTP_ENABLED=true
         ;;
     *)
-        echo "✅ Usando configuración básica (H2 en memoria)"
+        echo "✅ Using basic configuration (H2 in-memory)"
         ;;
 esac
 
 echo ""
-echo "🚀 Iniciando MELIAN MCP Server..."
-echo "📝 Para detener el servidor: Ctrl+C"
-echo "📖 Documentación completa: ./EJECUTAR_SERVIDOR_MCP.md"
+echo "🚀 Starting MELIAN MCP Server..."
+echo "📝 To stop the server: Ctrl+C"
+echo "📖 Full documentation: ./RUN_MCP_SERVER.md"
 echo ""
 echo "=========================================="
 
-# Ejecutar el servidor
+# Run the server
 java -jar "$JAR_FILE"

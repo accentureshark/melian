@@ -5,14 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 /**
  * Aggregated movie service using Spring best practices that fetches data from all available sources in parallel:
@@ -29,7 +27,7 @@ public class AggregatedMovieService {
     
     private final TMDBService tmdbService;
     private final SqlMovieChunkService sqlService;
-    private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured
+    private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured  
     private final ExecutorService executorService = Executors.newFixedThreadPool(3); // Reduced to 3 since IMDB removed
 
 
@@ -324,7 +322,7 @@ public class AggregatedMovieService {
         
         status.put("tmdb_service", tmdbService != null ? "AVAILABLE" : "NOT_AVAILABLE");
         status.put("sql_service", sqlService != null ? "AVAILABLE" : "NOT_AVAILABLE");
-        status.put("mongo_service", mongoService != null ? "AVAILABLE" : "NOT_AVAILABLE");
+        status.put("mongo_service", mongoService.isPresent() ? "AVAILABLE" : "NOT_AVAILABLE");
         
         return status;
     }

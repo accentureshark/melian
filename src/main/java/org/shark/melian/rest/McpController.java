@@ -1,8 +1,11 @@
 package org.shark.melian.rest;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.Value;
 import org.shark.melian.mcp.McpDto;
+import org.shark.melian.mcp.McpService;
 import org.shark.melian.mcp.PureMcpServer;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,87 +24,84 @@ import java.util.Map;
 @RequestMapping("/mcp")
 public class McpController {
 
-    private final PureMcpServer mcpServer;
-    private final ObjectMapper objectMapper;
+    private final McpService mcpService;
 
-    public McpController(PureMcpServer mcpServer, ObjectMapper objectMapper) {
-        this.mcpServer = mcpServer;
-        this.objectMapper = objectMapper;
+    @Value("${mcp.swagger.helpers.enabled:true}")
+    private boolean helpersEnabled;
+
+    public McpController(McpService mcpService) {
+        this.mcpService = mcpService;
     }
 
     @Operation(summary = "Handle MCP JSON-RPC requests")
     @PostMapping
-    public McpDto.JsonRpcResponse handle(@RequestBody McpDto.JsonRpcRequest request) throws Exception {
-        Object result = handleMcpRequest(request);
-        return McpDto.JsonRpcResponse.builder()
+    public McpDto.JsonRpcResponse handle(@RequestBody JsonNode request) {
+        Object id = extractId(request.get("id"));
+        McpDto.JsonRpcResponse.McpDto.JsonRpcResponseBuilder builder = McpDto.JsonRpcResponse.builder()
                 .jsonrpc("2.0")
-                .result(result)
-                .id(request.getId())
-                .build();
+                .id(id);
+
+        String jsonrpc = request.path("jsonrpc").asText(null);
+        if (!"2.0".equals(jsonrpc)) {
+            builder.error(McpDto.JsonRpcError.builder().code(-32600).message("Invalid JSON-RPC version").build());
+            return builder.build();
+        }
+
+        String method = request.path("method").asText(null);
+        JsonNode params = request.get("params");
+
+        try {
+            Object result = mcpService.dispatch(method, params);
+            builder.result(result);
+        } catch (NoSuchMethodException e) {
+            builder.error(McpDto.JsonRpcError.builder().code(-32601).message(e.getMessage()).build());
+        } catch (IllegalArgumentException e) {
+            builder.error(McpDto.JsonRpcError.builder().code(-32602).message(e.getMessage()).build());
+        } catch (Exception e) {
+            builder.error(McpDto.JsonRpcError.builder().code(-32603).message(e.getMessage()).build());
+        }
+
+        return builder.build();
     }
 
-    @PostMapping("/handle")
-    @Operation(summary = "Maneja una solicitud MCP")
-    public Object handleMcpRequest(@RequestBody McpDto.JsonRpcRequest request) {
-        if (request == null || request.getMethod() == null) {
-            throw new IllegalArgumentException("El método no puede ser null");
+    private Object extractId(JsonNode idNode) {
+        if (idNode == null || idNode.isNull()) {
+            return null;
         }
-        String method = request.getMethod();
-        Object params = request.getParams();
-
-        // Validar que los parámetros requeridos no sean null
-        if ("tools/call".equals(method)) {
-            Map<String, Object> args = (Map<String, Object>) params;
-            if (args == null || args.get("name") == null) {
-                throw new IllegalArgumentException("El nombre de la herramienta no puede ser null");
-            }
+        if (idNode.isIntegralNumber()) {
+            return idNode.longValue();
         }
-
-        switch (method) {
-            case "initialize": {
-                McpDto.InitializeRequest initReq = objectMapper.convertValue(params, McpDto.InitializeRequest.class);
-                McpDto.InitializeResult result = mcpServer.initialize(initReq);
-                Map<String, Object> response = new HashMap<>();
-                response.put("serverInfo", result.getServerInfo());
-                response.put("capabilities", result.getCapabilities());
-                response.put("protocolVersion", result.getProtocolVersion());
-                return response;
-            }
-            case "tools/list":
-                return mcpServer.listTools();
-            case "tools/call": {
-                McpDto.CallToolRequest callReq = objectMapper.convertValue(params, McpDto.CallToolRequest.class);
-                return mcpServer.callTool(callReq);
-            }
-            case "resources/list":
-                return mcpServer.listResources();
-            case "resources/read": {
-                McpDto.ReadResourceRequest readReq = objectMapper.convertValue(params, McpDto.ReadResourceRequest.class);
-                return mcpServer.readResource(readReq);
-            }
-            default:
-                throw new IllegalArgumentException("Unknown method: " + method);
+        if (idNode.isNumber()) {
+            return idNode.numberValue();
         }
+        return idNode.asText();
     }
 
     @Operation(summary = "Health check")
     @GetMapping("/health")
-    public McpDto.HealthStatus health() {
-        return mcpServer.getHealth();
+    public Map<String, Object> health() {
+        return mcpService.health();
     }
 
-    @Operation(summary = "List available tools")
+    @Operation(summary = "List available tools (non-standard helper)")
     @GetMapping("/tools")
-    public McpDto.ToolsListResult tools() {
-        return mcpServer.listTools();
+    public Object tools() throws Exception {
+        if (!helpersEnabled) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return mcpService.dispatch("tools/list", null);
     }
 
-    @Operation(summary = "List or read resources")
+    @Operation(summary = "List or read resources (non-standard helper)")
     @GetMapping("/resources")
     public Object resources(@RequestParam(value = "uri", required = false) String uri) {
-        if (uri != null) {
-            return mcpServer.readResource(McpDto.ReadResourceRequest.builder().uri(uri).build());
+        if (!helpersEnabled) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        return mcpServer.listResources();
+        if (uri != null) {
+            // No resource storage yet
+            return mcpService.listResources();
+        }
+        return mcpService.listResources();
     }
 }

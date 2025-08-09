@@ -1,3 +1,4 @@
+
 package org.shark.melian.mcp;
 
 import lombok.RequiredArgsConstructor;
@@ -9,8 +10,8 @@ import org.shark.melian.service.AggregatedMovieService;
 import org.springframework.stereotype.Component;
 
 /**
- * Spring MCP Server implementation using Spring best practices.
- * Follows the Model Context Protocol specification for movie data access.
+ * Implementación Spring del servidor MCP.
+ * Sigue la especificación Model Context Protocol para acceso a datos de películas.
  */
 @Component
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class MelianMcpServer {
     private final MelianProperties melianProperties;
     private final AggregatedMovieService aggregatedMovieService;
     private final PureMcpServer mcpServer;
-    
+
     private McpHttpTransport httpTransport;
     private McpStdioTransport stdioTransport;
 
@@ -73,7 +74,7 @@ public class MelianMcpServer {
 
     private boolean isStdioTransportEnabled() {
         String stdioEnabled = System.getenv("MCP_SERVER_STDIO_ENABLED");
-        return "true".equalsIgnoreCase(stdioEnabled) || 
+        return "true".equalsIgnoreCase(stdioEnabled) ||
                System.getProperty("mcp.stdio.enabled", "true").equals("true");
     }
 
@@ -115,7 +116,7 @@ public class MelianMcpServer {
     private void waitForShutdown() {
         // Add shutdown hook and wait
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
-        
+
         try {
             // Keep the main thread alive
             Object lock = new Object();

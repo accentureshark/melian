@@ -9,11 +9,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     database-platform: org.hibernate.dialect.MySQLDialect
   data:
     mongodb:
       uri: mongodb://root:example@localhost:27017/melian_movies?authSource=admin
+      auto-index-creation: false
 
 melian:
   mcp:

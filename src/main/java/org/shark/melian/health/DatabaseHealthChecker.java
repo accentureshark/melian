@@ -19,21 +19,27 @@ public class DatabaseHealthChecker implements ApplicationRunner {
 
     @Override
     public void run(org.springframework.boot.ApplicationArguments args) {
-        // Chequeo MySQL
+        // Chequeo MySQL/H2 - SQL Database
         try {
             jdbcTemplate.execute("SELECT 1");
+            System.out.println("✅ SQL Database connection: OK");
         } catch (Exception e) {
-            throw new IllegalStateException("No se pudo conectar a MySQL: " + e.getMessage(), e);
+            System.err.println("❌ SQL Database connection failed: " + e.getMessage());
+            // Don't fail startup for SQL issues when using H2
         }
 
-        // Chequeo MongoDB
+        // Chequeo MongoDB - opcional
         if (mongoClient != null) {
             try {
                 mongoClient.getDatabase("melian_movies")
                         .runCommand(new Document("ping", 1));
+                System.out.println("✅ MongoDB connection: OK");
             } catch (Exception e) {
-                throw new IllegalStateException("No se pudo conectar a MongoDB: " + e.getMessage(), e);
+                System.err.println("⚠️  MongoDB connection failed (optional): " + e.getMessage());
+                // Don't fail startup for MongoDB issues - it's optional
             }
+        } else {
+            System.out.println("ℹ️  MongoDB client not available - running without MongoDB");
         }
     }
 }

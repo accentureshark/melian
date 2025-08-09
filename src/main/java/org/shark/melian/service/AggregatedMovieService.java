@@ -29,7 +29,7 @@ public class AggregatedMovieService {
     
     private final TMDBService tmdbService;
     private final SqlMovieChunkService sqlService;
-    private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured
+    private final Optional<MongoMovieChunkService> mongoService; // Optional since MongoDB might not be configured  
     private final ExecutorService executorService = Executors.newFixedThreadPool(3); // Reduced to 3 since IMDB removed
 
 
@@ -324,7 +324,7 @@ public class AggregatedMovieService {
         
         status.put("tmdb_service", tmdbService != null ? "AVAILABLE" : "NOT_AVAILABLE");
         status.put("sql_service", sqlService != null ? "AVAILABLE" : "NOT_AVAILABLE");
-        status.put("mongo_service", mongoService != null ? "AVAILABLE" : "NOT_AVAILABLE");
+        status.put("mongo_service", mongoService.isPresent() ? "AVAILABLE" : "NOT_AVAILABLE");
         
         return status;
     }

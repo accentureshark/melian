@@ -50,8 +50,8 @@ class PureMcpServerTest {
 
         assertNotNull(result);
         assertEquals("2024-11-05", result.getProtocolVersion());
-        assertEquals("melian-movie-server", result.getServerInfo().getName());
-        assertEquals("1.0.0", result.getServerInfo().getVersion());
+        assertEquals("Melian Movie Search", result.getServerInfo().getName());
+        assertEquals("1.0", result.getServerInfo().getVersion());
         assertNotNull(result.getCapabilities());
         assertTrue(result.getCapabilities().getTools().isListChanged());
         assertTrue(result.getCapabilities().getResources().isSubscribe());

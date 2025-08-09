@@ -52,6 +52,7 @@ public class McpDto {
     @Data
     @Builder
     public static class JsonRpcResponse {
+        @Builder.Default
         private String jsonrpc = "2.0";
         private Object result;
         private JsonRpcError error;
@@ -77,6 +78,7 @@ public class McpDto {
     @Data
     @Builder
     public static class InitializeResult {
+        @Builder.Default
         private String protocolVersion = "2024-11-05";
         private ServerCapabilities capabilities;
         private ServerInfo serverInfo;

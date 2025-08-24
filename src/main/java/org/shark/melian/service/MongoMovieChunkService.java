@@ -2,6 +2,7 @@ package org.shark.melian.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.logging.Log;
 import org.shark.melian.document.MovieDocument;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
@@ -28,6 +29,7 @@ public class MongoMovieChunkService implements MovieChunkService {
 
     private final MovieDocumentRepository movieDocumentRepository;
     private final TMDBService tmdbService;
+
 
     @Value("${melian.search.locale:en}")
     private String searchLocale;

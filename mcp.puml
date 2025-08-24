@@ -1,18 +1,28 @@
 @startuml
-actor "Cliente IA / RAG / LLM" as client
+actor "Cliente IA / RAG / LLM (Mentor, VSCode, Claude Desktop, etc)" as client
 
 rectangle "MCP Server (Ej: MELIAN)" {
-  [API MCP (REST/HTTP)]
-  [Adapter SQL/FS/API/NoSQL/...]
+  [API MCP (JSON-RPC 2.0 / HTTP / stdio)]
+  [Gestor de Sesiones y Versionado]
+  [Gestor de Herramientas MCP]
+  [Gestor de Recursos MCP]
+  [Adaptadores Multi-Backend (SQL, MongoDB, TMDB, Archivos, ...)]
   [Chunking y Enrichment]
   [Embedding Engine (opcional)]
   [Serializador MCP]
+  [Gestor de Errores MCP]
 }
 
-client --> [API MCP (REST/HTTP)] : Consulta (NLQ/SQL/Filter)
-[API MCP (REST/HTTP)] --> [Adapter SQL/FS/API/NoSQL/...]
-[Adapter SQL/FS/API/NoSQL/...] --> [Chunking y Enrichment]
-[Chunking y Enrichment] --> [Embedding Engine (opcional)]
-[Embedding Engine (opcional)] --> [Serializador MCP]
+client --> [API MCP (JSON-RPC 2.0 / HTTP / stdio)] : Llama método MCP (initialize, tools/list, tools/call, ...)
+[API MCP (JSON-RPC 2.0 / HTTP / stdio)] --> [Gestor de Sesiones y Versionado] : Negociación de protocolo/version
+[API MCP (JSON-RPC 2.0 / HTTP / stdio)] --> [Gestor de Herramientas MCP] : tools/list, tools/call
+[API MCP (JSON-RPC 2.0 / HTTP / stdio)] --> [Gestor de Recursos MCP] : resources/list, resources/read
+[Gestor de Herramientas MCP] --> [Adaptadores Multi-Backend (SQL, MongoDB, TMDB, Archivos, ...)] : Consulta federada
+[Gestor de Recursos MCP] --> [Adaptadores Multi-Backend (SQL, MongoDB, TMDB, Archivos, ...)] : Acceso a datos
+[Adaptadores Multi-Backend (SQL, MongoDB, TMDB, Archivos, ...)] --> [Chunking y Enrichment] : Procesamiento de chunks
+[Chunking y Enrichment] --> [Embedding Engine (opcional)] : Embedding de chunks
+[Embedding Engine (opcional)] --> [Serializador MCP] : Prepara respuesta MCP
+[Serializador MCP] --> [Gestor de Errores MCP] : Validación y formateo de errores
+[Gestor de Errores MCP] --> client : Respuesta MCP (chunks, metadata, errores, etc.)
 [Serializador MCP] --> client : Respuesta MCP (chunks + metadata + embedding)
 @enduml

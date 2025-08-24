@@ -350,20 +350,6 @@ public class MelianMcpServerIntegrationTest {
     }
 
     @Test
-    @Order(10)
-    @DisplayName("REST resources endpoint returns resources list")
-    void restResourcesEndpointWorks() {
-        given()
-            .when()
-                .get("/mcp/resources")
-            .then()
-                .statusCode(200)
-                .contentType(ContentType.JSON)
-                .body("resources", hasSize(3))
-                .body("resources[*].uri", hasItems("melian://movies/sql", "melian://movies/mongo", "melian://movies/tmdb"));
-    }
-
-    @Test
     @Order(11)
     @DisplayName("Read SQL resource returns movie data")
     void readSqlResource() {
@@ -425,22 +411,6 @@ public class MelianMcpServerIntegrationTest {
                 .body("result.contents[0].text", notNullValue());
     }
 
-    @Test
-    @Order(13)
-    @DisplayName("REST resources endpoint reads specific resource")
-    void restResourcesReadSpecific() {
-        given()
-            .queryParam("uri", "melian://movies/sql")
-            .when()
-                .get("/mcp/resources")
-            .then()
-                .statusCode(200)
-                .contentType(ContentType.JSON)
-                .body("contents", hasSize(1))
-                .body("contents[0].uri", equalTo("melian://movies/sql"))
-                .body("contents[0].mimeType", equalTo("application/json"))
-                .body("contents[0].text", notNullValue());
-    }
 
     // Error Handling Tests
 

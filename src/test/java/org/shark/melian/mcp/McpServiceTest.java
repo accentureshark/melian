@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.shark.melian.service.AggregatedMovieService;
 
 import java.util.List;
 import java.util.Map;
@@ -15,10 +17,12 @@ class McpServiceTest {
 
     private McpService service;
     private ObjectMapper mapper = new ObjectMapper();
+    private AggregatedMovieService aggregatedMovieService;
 
     @BeforeEach
     void setUp() {
-        service = new McpService();
+        aggregatedMovieService = Mockito.mock(AggregatedMovieService.class);
+        service = new McpService(aggregatedMovieService);
     }
 
     @Test
@@ -53,4 +57,3 @@ class McpServiceTest {
         assertNotNull(map.get("content"));
     }
 }
-

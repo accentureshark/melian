@@ -1,4 +1,3 @@
-
 # MELIAN
 
 > **Módulo de Embedding y Lógica Inteligente para Acceso Natural**
@@ -11,7 +10,8 @@
 
 ## ¿Qué es MELIAN?
 
-**MELIAN** es tu asistente digital abstracto para la integración y exposición inteligente de datos empresariales.  
+**MELIAN** es una implementación de un servidor MCP (Model Content Protocol) multi-backend, capaz de acceder y federar múltiples repositorios de películas y datos relacionados (SQL, MongoDB, TMDB, archivos, etc.).
+
 No es solo un software: es un *personaje* que entiende, transforma y sirve conocimiento a cualquier dominio de tu organización.
 
 MELIAN se implementa como un **MCP Server** (Model Content Protocol), capaz de conectarse a bases de datos, archivos, APIs, documentos, planillas y sistemas legacy,  
@@ -19,19 +19,26 @@ y exponer chunks enriquecidos, embeddings y metadata lista para potenciar aplica
 
 ## MCP compliance
 
-Melian expone un único endpoint **POST `/mcp`** que implementa [JSON-RPC 2.0](https://www.jsonrpc.org/specification). Todas las respuestas utilizan **HTTP 200**; los errores se entregan dentro del cuerpo como objeto `error` de JSON-RPC.
+Melian expone un único endpoint **POST `/mcp`** que implementa [JSON-RPC 2.0](https://www.jsonrpc.org/specification) sobre HTTP o stdio, siguiendo el [estándar oficial Model Content Protocol](https://modelcontextprotocol.io/specification/2025-03-26). Todas las respuestas utilizan **HTTP 200**; los errores se entregan dentro del cuerpo como objeto `error` de JSON-RPC.
 
-Flujo básico de llamadas:
+> ⚠️ **Nota:** Melian **no expone endpoints RESTful** como `GET /mcp/metadata` o `GET /mcp/chunks`, ya que estos no son parte obligatoria del estándar MCP. El transporte y la interfaz recomendada por MCP es JSON-RPC 2.0 sobre HTTP o stdio.
 
-1. `initialize` – negocia la versión del protocolo y devuelve capacidades del servidor.
-2. `tools/list` – lista las herramientas disponibles.
-3. `ping` – valida conectividad (requiere haber inicializado previamente).
+> ⚠️ **Nota:** Swagger/OpenAPI **no está disponible** porque la interfaz MCP es binaria/JSON-RPC y no RESTful.
 
-Ejemplos:
+### Métodos MCP soportados
+
+- `initialize` – Negocia la versión del protocolo y devuelve capacidades del servidor.
+- `tools/list` – Lista las herramientas disponibles.
+- `tools/call` – Ejecuta una herramienta específica.
+- `resources/list` – Lista los recursos disponibles.
+- `resources/read` – Lee el contenido de un recurso específico.
+- `ping` – Valida conectividad (requiere haber inicializado previamente).
+
+### Ejemplo de requests JSON-RPC
 
 ```bash
 curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"protocolVersion":"2024-11-05"}}'
-curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"2","method":"tools/list","params":{"cursor":null,"limit":100}}'
+curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"2","method":"tools/list","params":{}}'
 curl -sS http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":"3","method":"ping","params":{}}'
 ```
 
@@ -83,42 +90,25 @@ Además, MELIAN permite elegir la fuente de datos (`source=sql` o `source=rest`)
 
 ---
 
-## Arquitectura LangChain4j (Nueva Implementación)
+## Arquitectura MELIAN (MCP Multi-backend)
 
-MELIAN ahora utiliza **LangChain4j MCP API** (`dev.langchain4j:langchain4j-mcp:1.2.0-beta8`) en lugar del MCP SDK, convirtiéndose en un asistente de IA que puede integrar múltiples servidores MCP externos. Esto proporciona:
+MELIAN implementa una arquitectura multi-backend, donde puede consultar y federar datos de múltiples fuentes (SQL, MongoDB, TMDB, archivos, etc.) y exponerlos a través del protocolo MCP. No implementa capacidades de asistente IA ni integración directa con OpenAI o LangChain4j AiServices.
 
-- ✅ **Integración de IA Nativa**: Asistente conversacional usando LangChain4j AiServices
-- ✅ **Herramientas de Película Integradas**: Búsqueda TMDB, chunks de datos, estado del servidor
-- ✅ **Conexión a Servidores MCP Externos**: Capacidad de conectar múltiples servidores MCP
-- ✅ **Modo Dual**: Funciona sin OpenAI (modo herramientas) o con OpenAI (modo IA completo)
-- ✅ **Configuración Flexible**: Base de datos opcional, integración externa opcional
-- ✅ **Startup Rápido**: H2 en memoria por defecto, sin dependencias externas requeridas
-
-### Componentes Principales:
-
-- **MelianAiAssistant**: Asistente principal usando LangChain4j AiServices
-- **MovieTools**: Herramientas de película con anotaciones @Tool de LangChain4j
-- **Pure Services**: Servicios sin dependencias externas (TMDBServicePure, SqlMovieChunkServicePure, MongoMovieChunkServicePure)
-- **Configuration**: Gestión de configuración basada en properties y variables de entorno
-- **MCP Client Integration**: Capacidad de conectar a servidores MCP externos via stdio/HTTP
-
----
-
-## Diagrama de Secuencia: `/mcp/chunks`
-
-![ChunkController Sequence](./docs/images/ChunkControllerSequence.png)
+- **Federación de datos**: Consulta y unifica datos de películas desde diferentes repositorios.
+- **Exposición estándar**: Expone los datos y metadatos a través de los métodos MCP (`tools/list`, `tools/call`, `resources/list`, `resources/read`, etc.).
+- **Sin asistente IA**: MELIAN no es un asistente conversacional ni integra modelos de lenguaje de manera nativa.
 
 ---
 
 ## Diagrama de Secuencia: `/mcp/metadata`
 
-![MetadataController Sequence](./docs/images/MetadataControllerSequence.png)
+![MetadataController Sequence](./docs/images/mcp-seq.png)
 
 ---
 
 ## Workflow desde un Cliente RAG
 
-![Workflow Cliente RAG](./docs/images/workflow_rag.png)
+![Workflow Cliente RAG](./docs/images/mcp.png)
 
 ---
 
@@ -376,3 +366,31 @@ El asistente proporciona:
 
 ## Roadmap
 
+---
+
+
+## 🟢 Cumplimiento MCP (Model Content Protocol)
+
+MELIAN es **MCP compliant** y puede ser consumido por clientes MCP estándar como Claude Desktop, VS Code, LangChain4j, etc. Cumple con:
+
+- Exposición de endpoints y métodos estándar MCP (REST y JSON-RPC)
+- Estructura de chunks (`ChunkDto`) y metadata (`TableMetadataDto`, `DatabaseMetadataDto`) según el estándar
+- Soporte de paginación, filtros y selección de fuente (`source=sql`, `source=mongo`, `source=tmdb`)
+- Respuestas y errores alineados a la especificación MCP
+- Interoperabilidad con clientes RAG y asistentes IA que soporten MCP
+
+> Para más detalles sobre el estándar MCP, consulta la [documentación oficial](https://github.com/langchain4j/langchain4j/blob/main/docs/model-content-protocol.md).
+
+---
+
+## Mejoras técnicas recomendadas: consultas paralelas y federación moderna
+
+Para optimizar la consulta a múltiples backends y hacer MELIAN aún más elegante y eficiente, se recomienda:
+
+- **Uso de GraphQL federado**: Implementar una capa interna GraphQL (con Apollo Federation, GraphQL Mesh, etc.) para federar y consultar en paralelo múltiples fuentes (SQL, MongoDB, TMDB, archivos, etc.). Los resolvers pueden ejecutarse en paralelo y exponer un esquema unificado.
+- **Programación reactiva (WebFlux, Project Reactor, RxJava)**: Migrar los adaptadores a un modelo reactivo (`Flux`/`Mono`), permitiendo consultas no bloqueantes y paralelas a los distintos repositorios. Esto reduce la latencia y mejora la escalabilidad.
+- **Uso de CompletableFuture o Parallel Streams**: Para una transición progresiva, se pueden lanzar consultas en paralelo usando `CompletableFuture.supplyAsync()` o streams paralelos en Java.
+- **Ventajas**: Menor latencia, mayor escalabilidad, código más moderno y mantenible, y preparado para arquitecturas serverless o microservicios.
+- **Impacto en el diagrama**: La capa de adaptadores multi-backend puede etiquetarse como "Reactive Streams" o "GraphQL Federation" para reflejar la consulta federada y paralela.
+
+Estas mejoras permiten que MELIAN aproveche tecnologías modernas para federar y consultar datos de múltiples fuentes de manera eficiente y elegante, manteniendo la fachada MCP estándar para los clientes.

@@ -53,7 +53,6 @@ public class McpHttpTransport {
 
         // REST endpoints
         context.addServlet(new ServletHolder(new ToolsServlet()), "/mcp/tools");
-        context.addServlet(new ServletHolder(new ResourcesServlet()), "/mcp/resources");
 
         jettyServer.setHandler(context);
         jettyServer.start();
@@ -190,38 +189,6 @@ public class McpHttpTransport {
                 objectMapper.writeValue(resp.getWriter(), tools);
             } catch (Exception e) {
                 log.error("Error listing tools", e);
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
-            }
-        }
-    }
-
-    /**
-     * Resources REST endpoint
-     */
-    private class ResourcesServlet extends HttpServlet {
-
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-
-            try {
-                String uri = req.getParameter("uri");
-                if (uri != null) {
-                    // Leer recurso específico
-                    McpDto.ReadResourceRequest readReq = McpDto.ReadResourceRequest.builder()
-                            .uri(uri)
-                            .build();
-                    McpDto.ReadResourceResult result = mcpServer.readResource(readReq);
-                    objectMapper.writeValue(resp.getWriter(), result);
-                } else {
-                    // Listar todos los recursos
-                    McpDto.ResourcesListResult resources = mcpServer.listResources();
-                    objectMapper.writeValue(resp.getWriter(), resources);
-                }
-            } catch (Exception e) {
-                log.error("Error handling resources request", e);
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
             }

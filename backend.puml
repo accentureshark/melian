@@ -1,0 +1,30 @@
+@startuml
+!define RECTANGLE class
+
+actor Frontend as FE
+
+rectangle "McpController\n(REST API)" as McpController
+rectangle "McpService\n(Lógica MCP)" as McpService
+rectangle "AggregatedMovieService\n(Agrupador de fuentes)" as AggregatedMovieService
+rectangle "SqlMovieChunkService\n(Repositorio SQL)" as SqlRepo
+rectangle "MongoMovieChunkService\n(Repositorio MongoDB)" as MongoRepo
+rectangle "TMDBService\n(REST externo)" as TMDBRepo
+
+FE -> McpController : POST /mcp\n(method: tools/call, params: {name: find_movie_by_title, ...})
+McpController -> McpService : dispatch(\"tools/call\", ...)
+
+McpService -> AggregatedMovieService : searchMovies(title, limit)
+
+AggregatedMovieService -> SqlRepo : search(title, limit)
+AggregatedMovieService -> MongoRepo : search(title, limit)
+AggregatedMovieService -> TMDBRepo : search(title, limit)
+
+SqlRepo --> AggregatedMovieService : List<MovieResult> (SQL)
+MongoRepo --> AggregatedMovieService : List<MovieResult> (MongoDB)
+TMDBRepo --> AggregatedMovieService : List<MovieResult> (TMDB API)
+
+AggregatedMovieService --> McpService : List<MovieResult> (agregado)
+McpService --> McpController : { movies: [...] }
+McpController --> FE : JSON response
+
+@enduml

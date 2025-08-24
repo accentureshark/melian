@@ -1,24 +1,32 @@
 @startuml
-title Flujo de endpoints MCP Server (Sakila)
+' Flujo actualizado de endpoints MCP Server multi-backend (MELIAN)
+title Flujo de interacción MCP Server (multi-backend, JSON-RPC)
 
 actor "Cliente (LLM, RAG, UI, etc)" as client
 
-== Endpoint 1: Metadata/DDL ==
-client -> "MCP Server" : GET /mcp/metadata
-"MCP Server" -> "MySQL Sakila DB" : Consulta DatabaseMetaData
-"MySQL Sakila DB" --> "MCP Server" : Tablas, columnas, FKs, tipos, etc.
-"MCP Server" --> client : JSON de metadata (DDL actualizada)
+== Inicialización y descubrimiento ==
+client -> "MCP Server" : POST /mcp (method: initialize)
+"MCP Server" --> client : Capacidades, versión, recursos, herramientas
 
-== Endpoint 2: Consulta RAG ==
-client -> "MCP Server" : POST /mcp/query\n(query NLQ o SQL)
-alt Query es NLQ
-    "MCP Server" -> "LLM o Traductor" : Traduce NLQ a SQL
-    "LLM o Traductor" --> "MCP Server" : SQL generado
-end
-"MCP Server" -> "MySQL Sakila DB" : Ejecuta SQL
-"MySQL Sakila DB" --> "MCP Server" : Resultados crudos
-"MCP Server" -> "Chunking + Embedding" : Chunking y embebido
-"Chunking + Embedding" --> "MCP Server" : Chunks enriquecidos (contenido + metadata + embedding)
-"MCP Server" --> client : Respuesta MCP (JSON con chunks)
+== Listado de herramientas y recursos ==
+client -> "MCP Server" : POST /mcp (method: tools/list)
+"MCP Server" --> client : Lista de herramientas
+client -> "MCP Server" : POST /mcp (method: resources/list)
+"MCP Server" --> client : Lista de recursos (SQL, MongoDB, TMDB, ...)
 
+== Ejecución de consulta federada (ejemplo: chunks de películas) ==
+client -> "MCP Server" : POST /mcp (method: tools/call, get_movie_chunks)
+"MCP Server" -> "Adapter SQL" : Consulta películas SQL
+"MCP Server" -> "Adapter MongoDB" : Consulta películas MongoDB
+"MCP Server" -> "Adapter TMDB" : Consulta películas TMDB
+"Adapter SQL" --> "MCP Server" : Resultados SQL
+"Adapter MongoDB" --> "MCP Server" : Resultados MongoDB
+"Adapter TMDB" --> "MCP Server" : Resultados TMDB
+"MCP Server" -> "Chunking + Enrichment" : Chunking y enriquecimiento federado
+"Chunking + Enrichment" --> "MCP Server" : Chunks enriquecidos (contenido + metadata + embedding)
+"MCP Server" --> client : Respuesta MCP (chunks federados)
+
+== Ping/Health ==
+client -> "MCP Server" : POST /mcp (method: ping)
+"MCP Server" --> client : Pong + timestamp
 @enduml

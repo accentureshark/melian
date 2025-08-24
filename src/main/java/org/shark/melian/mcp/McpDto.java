@@ -249,4 +249,17 @@ public class McpDto {
         private Map<String, Object> details;
         private String timestamp;
     }
+
+    @Data
+    @Builder
+    public static class PingRequest {
+        // Puede estar vacío según el estándar MCP
+    }
+
+    @Data
+    @Builder
+    public static class PingResult {
+        private String timestamp;
+        private String message;
+    }
 }

@@ -263,4 +263,12 @@ public class PureMcpServer {
         }
     }
 
+    // MCP ping method for compliance
+    public McpDto.PingResult ping(McpDto.PingRequest request) {
+        log.info("[PureMcpServer] Received ping request");
+        return McpDto.PingResult.builder()
+                .timestamp(Instant.now().toString())
+                .message("pong")
+                .build();
+    }
 }

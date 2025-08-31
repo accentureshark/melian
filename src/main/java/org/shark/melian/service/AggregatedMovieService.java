@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -23,6 +24,7 @@ import java.util.concurrent.Executors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnBean({TMDBService.class, SqlMovieChunkService.class})
 public class AggregatedMovieService {
     
     private final TMDBService tmdbService;

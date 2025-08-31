@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.model.ChunkDto;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.service.AggregatedMovieService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,9 +15,10 @@ import java.util.List;
  * LangChain4j tools for movie operations using Spring best practices.
  * These tools are automatically exposed to AI services.
  */
-@Component
+@Component("movieTools")
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnBean(AggregatedMovieService.class)
 public class MovieTools {
 
     private final AggregatedMovieService aggregatedMovieService;

@@ -47,6 +47,7 @@ interface CustomMovieDocumentRepository {
  */
 @Component
 @Slf4j
+@org.springframework.boot.autoconfigure.condition.ConditionalOnBean(org.springframework.data.mongodb.core.MongoTemplate.class)
 class CustomMovieDocumentRepositoryImpl implements CustomMovieDocumentRepository {
 
     @Autowired

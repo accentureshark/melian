@@ -128,6 +128,10 @@ case "$option" in
         ;;
     *)
         echo "✅ Using basic configuration (H2 in-memory)"
+        export DB_URL="jdbc:h2:mem:melian"
+        export DB_USERNAME="sa"
+        export DB_PASSWORD=""
+        export DB_DRIVER="org.h2.Driver"
         ;;
 esac
 

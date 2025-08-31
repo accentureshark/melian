@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DatabaseHealthChecker implements ApplicationRunner {
 
-    @Autowired
+    @Autowired(required = false)
     private JdbcTemplate jdbcTemplate;
 
     @Autowired(required = false)
@@ -20,12 +20,16 @@ public class DatabaseHealthChecker implements ApplicationRunner {
     @Override
     public void run(org.springframework.boot.ApplicationArguments args) {
         // Chequeo MySQL/H2 - SQL Database
-        try {
-            jdbcTemplate.execute("SELECT 1");
-            System.out.println("✅ SQL Database connection: OK");
-        } catch (Exception e) {
-            System.err.println("❌ SQL Database connection failed: " + e.getMessage());
-            // Don't fail startup for SQL issues when using H2
+        if (jdbcTemplate != null) {
+            try {
+                jdbcTemplate.execute("SELECT 1");
+                System.out.println("✅ SQL Database connection: OK");
+            } catch (Exception e) {
+                System.err.println("❌ SQL Database connection failed: " + e.getMessage());
+                // Don't fail startup for SQL issues when using H2
+            }
+        } else {
+            System.out.println("ℹ️  SQL Database not configured");
         }
 
         // Chequeo MongoDB - opcional

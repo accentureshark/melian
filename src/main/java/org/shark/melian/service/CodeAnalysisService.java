@@ -125,22 +125,38 @@ public class CodeAnalysisService {
                 }
                 
                 // Count methods and their documentation
-                long methodCount = content.lines()
-                    .filter(line -> line.trim().matches(".*\\b(public|private|protected)\\s+.*\\(.*\\).*\\{?"))
-                    .count();
-                totalMethods += methodCount;
-                
-                // Simple heuristic for documented methods (previous line has /** or *)
+                long methodCount = 0;
                 long documentedMethodCount = 0;
                 String[] lineArray = lines.toArray(new String[0]);
-                for (int i = 1; i < lineArray.length; i++) {
-                    if (lineArray[i].trim().matches(".*\\b(public|private|protected)\\s+.*\\(.*\\).*\\{?")) {
-                        if (lineArray[i-1].trim().contains("/**") || lineArray[i-1].trim().contains("*/") || 
-                            lineArray[i-1].trim().startsWith("*")) {
+                
+                for (int i = 0; i < lineArray.length; i++) {
+                    String line = lineArray[i].trim();
+                    if (line.matches(".*\\b(public|private|protected)\\s+.*\\(.*\\).*\\{?")) {
+                        methodCount++;
+                        
+                        // Check if there's documentation before this method
+                        boolean hasDocumentation = false;
+                        for (int j = i - 1; j >= 0; j--) {
+                            String prevLine = lineArray[j].trim();
+                            if (prevLine.isEmpty()) {
+                                continue; // Skip empty lines
+                            }
+                            if (prevLine.contains("/**") || prevLine.contains("*/") || prevLine.startsWith("*")) {
+                                hasDocumentation = true;
+                                break;
+                            }
+                            if (prevLine.startsWith("@")) {
+                                continue; // Skip annotations
+                            }
+                            break; // Found a non-documentation line
+                        }
+                        
+                        if (hasDocumentation) {
                             documentedMethodCount++;
                         }
                     }
                 }
+                totalMethods += methodCount;
                 documentedMethods += documentedMethodCount;
             }
         }

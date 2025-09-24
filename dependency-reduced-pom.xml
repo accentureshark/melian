@@ -17,31 +17,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.11</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <phase>test</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <excludes>
-            <exclude>java/*</exclude>
-            <exclude>jdk/*</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
@@ -84,24 +59,6 @@
         <version>3.2.2</version>
         <configuration>
           <excludedGroups>integration</excludedGroups>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.2.2</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <groups>integration</groups>
-          <includes>
-            <include>**/*IntegrationTest.java</include>
-          </includes>
         </configuration>
       </plugin>
     </plugins>
@@ -176,6 +133,58 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <version>3.2.6</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>json-path</artifactId>
+          <groupId>com.jayway.jsonpath</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>json-smart</artifactId>
+          <groupId>net.minidev</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>assertj-core</artifactId>
+          <groupId>org.assertj</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>awaitility</artifactId>
+          <groupId>org.awaitility</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>hamcrest</artifactId>
+          <groupId>org.hamcrest</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>jsonassert</artifactId>
+          <groupId>org.skyscreamer</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>spring-test</artifactId>
+          <groupId>org.springframework</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>xmlunit-core</artifactId>
+          <groupId>org.xmlunit</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-test</artifactId>
+      <version>3.2.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-test-autoconfigure</artifactId>
+      <version>3.2.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>5.8.0</version>
@@ -242,10 +251,6 @@
           <groupId>org.apache.httpcomponents</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>hamcrest</artifactId>
-          <groupId>org.hamcrest</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>tagsoup</artifactId>
           <groupId>org.ccil.cowan.tagsoup</groupId>
         </exclusion>
@@ -256,6 +261,10 @@
         <exclusion>
           <artifactId>xml-path</artifactId>
           <groupId>io.rest-assured</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>hamcrest</artifactId>
+          <groupId>org.hamcrest</groupId>
         </exclusion>
       </exclusions>
     </dependency>

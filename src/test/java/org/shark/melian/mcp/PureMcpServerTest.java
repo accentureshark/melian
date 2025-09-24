@@ -8,6 +8,7 @@ import org.shark.melian.mcp.McpDto;
 import org.shark.melian.mcp.PureMcpServer;
 import org.shark.melian.service.TMDBService;
 import org.shark.melian.service.AggregatedMovieService;
+import org.shark.melian.service.CodeAnalysisService;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.model.ChunkDto;
 
@@ -29,11 +30,14 @@ class PureMcpServerTest {
     @Mock
     private AggregatedMovieService aggregatedMovieService;
 
+    @Mock
+    private CodeAnalysisService codeAnalysisService;
+
     private PureMcpServer mcpServer;
 
     @BeforeEach
     void setUp() {
-        mcpServer = new PureMcpServer(tmdbService, aggregatedMovieService);
+        mcpServer = new PureMcpServer(tmdbService, aggregatedMovieService, codeAnalysisService);
     }
 
     @Test
@@ -63,7 +67,7 @@ class PureMcpServerTest {
 
         assertNotNull(result);
         assertNotNull(result.getTools());
-        assertEquals(3, result.getTools().size());
+        assertEquals(4, result.getTools().size());
 
         List<String> toolNames = result.getTools().stream()
                 .map(McpDto.Tool::getName)
@@ -72,6 +76,7 @@ class PureMcpServerTest {
         assertTrue(toolNames.contains("search_movies"));
         assertTrue(toolNames.contains("get_movie_chunks"));
         assertTrue(toolNames.contains("get_server_status"));
+        assertTrue(toolNames.contains("renovatio.analyze-code"));
     }
 
     @Test
@@ -211,5 +216,77 @@ class PureMcpServerTest {
         assertTrue(result.isError());
         assertEquals(1, result.getContent().size());
         assertTrue(result.getContent().get(0).getText().contains("Query parameter is required"));
+    }
+
+    @Test
+    void testCallAnalyzeCodeTool() {
+        Map<String, Object> mockAnalysis = new HashMap<>();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("overallScore", 85.5);
+        summary.put("formattingScore", 90.0);
+        summary.put("documentationScore", 81.0);
+        mockAnalysis.put("summary", summary);
+        mockAnalysis.put("codeFormatting", Map.of("score", 90.0, "totalFiles", 10));
+        
+        when(codeAnalysisService.analyzeCode("/test/path")).thenReturn(mockAnalysis);
+
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("path", "/test/path");
+
+        McpDto.CallToolRequest request = McpDto.CallToolRequest.builder()
+                .name("renovatio.analyze-code")
+                .arguments(arguments)
+                .build();
+
+        McpDto.CallToolResult result = mcpServer.callTool(request);
+
+        assertNotNull(result);
+        assertFalse(result.isError());
+        assertEquals(1, result.getContent().size());
+        assertTrue(result.getContent().get(0).getText().contains("Code analysis completed"));
+        assertTrue(result.getContent().get(0).getText().contains("85.5%"));
+        assertNotNull(result.getContent().get(0).getData());
+        verify(codeAnalysisService).analyzeCode("/test/path");
+    }
+
+    @Test
+    void testAnalyzeCodeWithMissingPath() {
+        Map<String, Object> arguments = new HashMap<>();
+
+        McpDto.CallToolRequest request = McpDto.CallToolRequest.builder()
+                .name("renovatio.analyze-code")
+                .arguments(arguments)
+                .build();
+
+        McpDto.CallToolResult result = mcpServer.callTool(request);
+
+        assertNotNull(result);
+        assertTrue(result.isError());
+        assertEquals(1, result.getContent().size());
+        assertTrue(result.getContent().get(0).getText().contains("Path parameter is required"));
+    }
+
+    @Test
+    void testAnalyzeCodeWithError() {
+        Map<String, Object> mockAnalysis = new HashMap<>();
+        mockAnalysis.put("error", "Directory not found");
+        
+        when(codeAnalysisService.analyzeCode("/invalid/path")).thenReturn(mockAnalysis);
+
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("path", "/invalid/path");
+
+        McpDto.CallToolRequest request = McpDto.CallToolRequest.builder()
+                .name("renovatio.analyze-code")
+                .arguments(arguments)
+                .build();
+
+        McpDto.CallToolResult result = mcpServer.callTool(request);
+
+        assertNotNull(result);
+        assertTrue(result.isError());
+        assertEquals(1, result.getContent().size());
+        assertTrue(result.getContent().get(0).getText().contains("Directory not found"));
+        verify(codeAnalysisService).analyzeCode("/invalid/path");
     }
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.shark.melian.service.TMDBService;
 import org.shark.melian.service.AggregatedMovieService;
+import org.shark.melian.service.CodeAnalysisService;
 import org.shark.melian.model.MovieResult;
 import org.shark.melian.model.ChunkDto;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ public class PureMcpServer {
 
     private final TMDBService tmdbService;
     private final AggregatedMovieService aggregatedMovieService;
+    private final CodeAnalysisService codeAnalysisService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public McpDto.InitializeResult initialize(McpDto.InitializeRequest request) {
@@ -60,6 +62,11 @@ public class PureMcpServer {
                         .name("get_server_status")
                         .description("Get server status")
                         .inputSchema(new HashMap<>())
+                        .build(),
+                McpDto.Tool.builder()
+                        .name("renovatio.analyze-code")
+                        .description("Analyze Java code for formatting, documentation, structure, and framework usage")
+                        .inputSchema(createAnalyzeCodeSchema())
                         .build()
         );
 
@@ -118,6 +125,45 @@ public class PureMcpServer {
                                     .type("text")
                                     .text(text)
                                     .data(health)
+                                    .build()))
+                            .build();
+                }
+                case "renovatio.analyze-code": {
+                    String path = (String) request.getArguments().get("path");
+                    if (path == null || path.isBlank()) {
+                        return McpDto.CallToolResult.builder()
+                                .isError(true)
+                                .content(List.of(McpDto.ToolContent.builder()
+                                        .type("text")
+                                        .text("Path parameter is required")
+                                        .build()))
+                                .build();
+                    }
+                    
+                    Map<String, Object> analysis = codeAnalysisService.analyzeCode(path);
+                    
+                    if (analysis.containsKey("error")) {
+                        return McpDto.CallToolResult.builder()
+                                .isError(true)
+                                .content(List.of(McpDto.ToolContent.builder()
+                                        .type("text")
+                                        .text((String) analysis.get("error"))
+                                        .build()))
+                                .build();
+                    }
+                    
+                    String text = "Code analysis completed for: " + path;
+                    Map<String, Object> summary = (Map<String, Object>) analysis.get("summary");
+                    if (summary != null) {
+                        text += "\nOverall Score: " + summary.get("overallScore") + "%";
+                    }
+                    
+                    return McpDto.CallToolResult.builder()
+                            .isError(false)
+                            .content(List.of(McpDto.ToolContent.builder()
+                                    .type("text")
+                                    .text(text)
+                                    .data(analysis)
                                     .build()))
                             .build();
                 }
@@ -225,6 +271,23 @@ public class PureMcpServer {
         properties.put("filter", filterProp);
 
         schema.put("properties", properties);
+
+        return schema;
+    }
+
+    private Object createAnalyzeCodeSchema() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "object");
+
+        Map<String, Object> properties = new HashMap<>();
+
+        Map<String, Object> pathProp = new HashMap<>();
+        pathProp.put("type", "string");
+        pathProp.put("description", "Ruta del directorio de código Java a analizar");
+        properties.put("path", pathProp);
+
+        schema.put("properties", properties);
+        schema.put("required", List.of("path"));
 
         return schema;
     }
